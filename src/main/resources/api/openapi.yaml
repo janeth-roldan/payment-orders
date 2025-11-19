@@ -92,15 +92,15 @@ paths:
                       status:
                         href: "/payment-initiation/payment-orders/550e8400-e29b-41d4-a716-446655440000/status"
         '400':
-          description: Request inválido
+          description: Solicitud inválida
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Error interno del servidor
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
@@ -125,13 +125,13 @@ paths:
         '404':
           description: Orden de pago no encontrada
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Error interno del servidor
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
@@ -156,13 +156,13 @@ paths:
         '404':
           description: Orden de pago no encontrada
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Error interno del servidor
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 

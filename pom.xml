@@ -150,6 +150,13 @@
             <artifactId>r2dbc</artifactId>
             <scope>test</scope>
         </dependency>
+        
+        <!-- PostgreSQL JDBC Driver for Testcontainers init scripts -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -211,6 +218,15 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
+                <configuration>
+                    <excludes>
+                        <!-- Excluir modelos generados por OpenAPI -->
+                        <exclude>**/adapter/in/rest/model/**</exclude>
+                        <exclude>**/adapter/in/rest/api/**</exclude>
+                        <!-- Excluir clase principal de Spring Boot -->
+                        <exclude>**/PaymentOrdersApplication.class</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <id>prepare-agent</id>

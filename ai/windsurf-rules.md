@@ -665,6 +665,395 @@ String id;  // Muy genérico
 
 ---
 
+## Manejo de Errores (OBLIGATORIO)
+
+### Estrategia Global de Manejo de Errores
+
+**CRÍTICO**: El manejo de errores DEBE ser uniforme, completo y seguir RFC 7807 (Problem Details for HTTP APIs)
+
+### Requisitos Obligatorios
+
+#### 1. GlobalExceptionHandler
+- **DEBE** existir un `@RestControllerAdvice` que maneje todas las excepciones
+- **DEBE** ser compatible con Spring WebFlux y Spring Boot 3
+- **DEBE** usar `ProblemDetail` de Spring 6+ (NO usar ErrorResponse personalizado)
+- **OBLIGATORIO**: Usar `org.springframework.http.ProblemDetail` nativo
+- **DEBE** manejar al menos estos tipos de errores:
+  - Errores de validación (`WebExchangeBindException`, `MethodArgumentNotValidException`)
+  - Errores de dominio (excepciones personalizadas del negocio)
+  - Errores técnicos (excepciones genéricas, errores de infraestructura)
+  - Errores de deserialización JSON/XML
+
+#### 2. Estructura RFC 7807 (Problem Details)
+Todas las respuestas de error DEBEN incluir:
+```json
+{
+  "type": "https://api.bank.com/errors/not-found",
+  "title": "Payment Order Not Found",
+  "status": 404,
+  "detail": "Payment order not found: 123e4567-e89b-12d3-a456-426614174000",
+  "instance": "/payment-initiation/payment-orders/123e4567-e89b-12d3-a456-426614174000",
+  "timestamp": "2025-11-19T15:30:00Z"
+}
+```
+
+**Campos obligatorios**:
+- `type` (URI): Identificador único del tipo de error
+- `title` (string): Título legible del error
+- `status` (integer): Código de estado HTTP
+- `detail` (string): Descripción específica del error
+- `instance` (URI): Ruta del recurso donde ocurrió el error
+- `timestamp` (string): Marca de tiempo ISO 8601
+
+#### 3. Excepciones de Dominio
+
+**DEBE** existir una jerarquía de excepciones personalizadas:
+
+```java
+// Excepción base de dominio
+public abstract class PaymentOrderDomainException extends RuntimeException {
+  protected PaymentOrderDomainException(String message) {
+    super(message);
+  }
+  
+  protected PaymentOrderDomainException(String message, Throwable cause) {
+    super(message, cause);
+  }
+}
+
+// Excepciones específicas
+public class PaymentOrderNotFoundException extends PaymentOrderDomainException {
+  private final UUID paymentOrderId;
+  
+  public PaymentOrderNotFoundException(UUID paymentOrderId) {
+    super("Payment order not found: " + paymentOrderId);
+    this.paymentOrderId = paymentOrderId;
+  }
+  
+  public UUID getPaymentOrderId() {
+    return paymentOrderId;
+  }
+}
+
+public class InvalidPaymentOrderException extends PaymentOrderDomainException {
+  public InvalidPaymentOrderException(String message) {
+    super(message);
+  }
+  
+  public InvalidPaymentOrderException(String message, Throwable cause) {
+    super(message, cause);
+  }
+}
+```
+
+#### 4. Mapeo de Excepciones a Códigos HTTP
+
+| Excepción | HTTP Status | Tipo RFC 7807 |
+|-----------|-------------|---------------|
+| `PaymentOrderNotFoundException` | 404 NOT_FOUND | `/errors/not-found` |
+| `InvalidPaymentOrderException` | 400 BAD_REQUEST | `/errors/validation-error` |
+| `WebExchangeBindException` | 400 BAD_REQUEST | `/errors/validation-error` |
+| `IllegalArgumentException` | 400 BAD_REQUEST | `/errors/invalid-argument` |
+| `Exception` (genérica) | 500 INTERNAL_SERVER_ERROR | `/errors/internal-error` |
+
+#### 5. Implementación del GlobalExceptionHandler
+
+**Ejemplo de implementación obligatoria**:
+
+```java
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+  private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+  /**
+   * Maneja PaymentOrderNotFoundException.
+   */
+  @ExceptionHandler(PaymentOrderNotFoundException.class)
+  public ResponseEntity<ProblemDetail> handlePaymentOrderNotFound(
+      PaymentOrderNotFoundException ex) {
+    
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+        HttpStatus.NOT_FOUND, 
+        ex.getMessage()
+    );
+    problemDetail.setType(URI.create("https://api.bank.com/errors/not-found"));
+    problemDetail.setTitle("Payment Order Not Found");
+    problemDetail.setProperty("paymentOrderId", ex.getPaymentOrderId());
+    problemDetail.setProperty("timestamp", OffsetDateTime.now());
+    
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problemDetail);
+  }
+
+  /**
+   * Maneja InvalidPaymentOrderException.
+   */
+  @ExceptionHandler(InvalidPaymentOrderException.class)
+  public ResponseEntity<ProblemDetail> handleInvalidPaymentOrder(
+      InvalidPaymentOrderException ex) {
+    
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+        HttpStatus.BAD_REQUEST, 
+        ex.getMessage()
+    );
+    problemDetail.setType(URI.create("https://api.bank.com/errors/validation-error"));
+    problemDetail.setTitle("Invalid Payment Order");
+    problemDetail.setProperty("timestamp", OffsetDateTime.now());
+    
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
+  }
+
+  /**
+   * Maneja errores de validación de Bean Validation.
+   */
+  @ExceptionHandler(WebExchangeBindException.class)
+  public ResponseEntity<ProblemDetail> handleValidationErrors(
+      WebExchangeBindException ex) {
+    
+    String details = ex.getBindingResult()
+        .getFieldErrors()
+        .stream()
+        .map(error -> error.getField() + ": " + error.getDefaultMessage())
+        .collect(Collectors.joining(", "));
+    
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+        HttpStatus.BAD_REQUEST, 
+        details
+    );
+    problemDetail.setType(URI.create("https://api.bank.com/errors/validation-error"));
+    problemDetail.setTitle("Validation Error");
+    problemDetail.setProperty("timestamp", OffsetDateTime.now());
+    
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
+  }
+
+  /**
+   * Maneja excepciones genéricas.
+   */
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<ProblemDetail> handleGenericException(Exception ex) {
+    log.error("Unexpected error occurred", ex);
+    
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+        HttpStatus.INTERNAL_SERVER_ERROR, 
+        "An unexpected error occurred"
+    );
+    problemDetail.setType(URI.create("https://api.bank.com/errors/internal-error"));
+    problemDetail.setTitle("Internal Server Error");
+    problemDetail.setProperty("timestamp", OffsetDateTime.now());
+    
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail);
+  }
+}
+```
+
+#### 6. Documentación en OpenAPI
+
+**DEBE** documentar todas las respuestas de error en `openapi.yaml`:
+
+```yaml
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - type
+        - title
+        - status
+        - detail
+        - timestamp
+      properties:
+        type:
+          type: string
+          format: uri
+          description: URI que identifica el tipo de error
+          example: "https://api.bank.com/errors/not-found"
+        title:
+          type: string
+          description: Título legible del error
+          example: "Payment Order Not Found"
+        status:
+          type: integer
+          description: Código de estado HTTP
+          example: 404
+        detail:
+          type: string
+          description: Descripción específica del error
+          example: "Payment order not found: 123e4567-e89b-12d3-a456-426614174000"
+        instance:
+          type: string
+          format: uri
+          description: URI del recurso donde ocurrió el error
+          example: "/payment-initiation/payment-orders/123e4567-e89b-12d3-a456-426614174000"
+        timestamp:
+          type: string
+          format: date-time
+          description: Marca de tiempo del error
+          example: "2025-11-19T15:30:00Z"
+
+  responses:
+    BadRequest:
+      description: Solicitud inválida
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            type: "https://api.bank.com/errors/validation-error"
+            title: "Validation Error"
+            status: 400
+            detail: "amount: must be greater than 0"
+            instance: "/payment-initiation/payment-orders"
+            timestamp: "2025-11-19T15:30:00Z"
+    
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            type: "https://api.bank.com/errors/not-found"
+            title: "Payment Order Not Found"
+            status: 404
+            detail: "Payment order not found: 123e4567-e89b-12d3-a456-426614174000"
+            instance: "/payment-initiation/payment-orders/123e4567-e89b-12d3-a456-426614174000"
+            timestamp: "2025-11-19T15:30:00Z"
+    
+    InternalServerError:
+      description: Error interno del servidor
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            type: "https://api.bank.com/errors/internal-error"
+            title: "Internal Server Error"
+            status: 500
+            detail: "An unexpected error occurred"
+            instance: "/payment-initiation/payment-orders"
+            timestamp: "2025-11-19T15:30:00Z"
+```
+
+**En cada endpoint, referenciar las respuestas**:
+```yaml
+paths:
+  /payment-initiation/payment-orders:
+    post:
+      responses:
+        '201':
+          description: Orden de pago creada exitosamente
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+```
+
+#### 7. Tests del GlobalExceptionHandler
+
+**DEBE** existir una suite completa de tests:
+
+```java
+@ExtendWith(MockitoExtension.class)
+class GlobalExceptionHandlerTest {
+
+  private GlobalExceptionHandler handler;
+
+  @BeforeEach
+  void setUp() {
+    handler = new GlobalExceptionHandler();
+  }
+
+  @Test
+  void shouldReturn404WhenHandlingPaymentOrderNotFoundException() {
+    // Given
+    UUID orderId = UUID.randomUUID();
+    PaymentOrderNotFoundException exception = new PaymentOrderNotFoundException(orderId);
+
+    // When
+    ResponseEntity<ProblemDetail> response = handler.handlePaymentOrderNotFound(exception);
+
+    // Then
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getStatus()).isEqualTo(404);
+    assertThat(response.getBody().getTitle()).isEqualTo("Payment Order Not Found");
+    assertThat(response.getBody().getDetail()).contains(orderId.toString());
+  }
+
+  @Test
+  void shouldReturn400WhenHandlingInvalidPaymentOrderException() {
+    // Given
+    InvalidPaymentOrderException exception = new InvalidPaymentOrderException("Invalid data");
+
+    // When
+    ResponseEntity<ProblemDetail> response = handler.handleInvalidPaymentOrder(exception);
+
+    // Then
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getStatus()).isEqualTo(400);
+  }
+
+  @Test
+  void shouldReturn500WhenHandlingGenericException() {
+    // Given
+    Exception exception = new RuntimeException("Unexpected error");
+
+    // When
+    ResponseEntity<ProblemDetail> response = handler.handleGenericException(exception);
+
+    // Then
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getStatus()).isEqualTo(500);
+  }
+}
+```
+
+#### 8. Checklist de Verificación
+
+Antes de considerar completo el manejo de errores, verificar:
+
+```markdown
+- [ ] GlobalExceptionHandler existe y está anotado con @RestControllerAdvice
+- [ ] Usa ProblemDetail de Spring 6+ (org.springframework.http.ProblemDetail)
+- [ ] NO usa ErrorResponse personalizado - solo ProblemDetail nativo
+- [ ] Maneja excepciones de dominio personalizadas
+- [ ] Maneja errores de validación (WebExchangeBindException)
+- [ ] Maneja excepciones genéricas con logging apropiado
+- [ ] Todas las respuestas incluyen campos RFC 7807 obligatorios
+- [ ] ProblemDetail está documentado en OpenAPI (schema nativo)
+- [ ] Todos los endpoints referencian respuestas de error
+- [ ] Content-Type es application/problem+json
+- [ ] Tests unitarios cubren todos los handlers
+- [ ] Tests de integración verifican respuestas de error completas
+- [ ] Logs de error incluyen stack traces (solo para errores 500)
+- [ ] No se exponen detalles sensibles en mensajes de error
+```
+
+#### 9. Buenas Prácticas
+
+**HACER**:
+- ✅ Usar `ProblemDetail` de Spring 6+ para compatibilidad nativa
+- ✅ Incluir `timestamp` en todas las respuestas de error
+- ✅ Usar URIs descriptivos en el campo `type`
+- ✅ Loggear errores 500 con stack trace completo
+- ✅ Incluir información de contexto útil (IDs, parámetros relevantes)
+- ✅ Usar `application/problem+json` como Content-Type
+- ✅ Documentar todos los códigos de error en OpenAPI
+
+**NO HACER**:
+- ❌ Exponer stack traces en respuestas de error
+- ❌ Incluir información sensible (contraseñas, tokens, datos personales)
+- ❌ Usar mensajes de error genéricos sin contexto
+- ❌ Retornar diferentes formatos de error según el tipo
+- ❌ Olvidar documentar errores en OpenAPI
+- ❌ Usar códigos de estado HTTP incorrectos
+- ❌ Loggear errores de validación (400) como errores críticos
+
+---
+
 ## Resumen de Entregables
 
 1. **Repositorio**: Repositorio Git con historial de commits limpio

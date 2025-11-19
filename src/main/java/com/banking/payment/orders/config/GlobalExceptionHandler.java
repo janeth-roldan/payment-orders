@@ -1,6 +1,5 @@
 package com.banking.payment.orders.config;
 
-import com.banking.payment.orders.adapter.in.rest.model.ErrorResponse;
 import com.banking.payment.orders.domain.exception.InvalidPaymentOrderException;
 import com.banking.payment.orders.domain.exception.PaymentOrderNotFoundException;
 import java.net.URI;
@@ -8,6 +7,7 @@ import java.time.OffsetDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -15,6 +15,7 @@ import org.springframework.web.bind.support.WebExchangeBindException;
 
 /**
  * GlobalExceptionHandler - Manejador global de excepciones según RFC 7807.
+ * Usa ProblemDetail nativo de Spring 6+ para compatibilidad completa con RFC 7807.
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -25,43 +26,47 @@ public class GlobalExceptionHandler {
    * Maneja PaymentOrderNotFoundException.
    */
   @ExceptionHandler(PaymentOrderNotFoundException.class)
-  public ResponseEntity<ErrorResponse> handlePaymentOrderNotFound(
+  public ResponseEntity<ProblemDetail> handlePaymentOrderNotFound(
       PaymentOrderNotFoundException ex) {
 
-    ErrorResponse error = new ErrorResponse();
-    error.setType(URI.create("https://api.bank.com/errors/not-found"));
-    error.setTitle("Payment Order Not Found");
-    error.setStatus(HttpStatus.NOT_FOUND.value());
-    error.setDetail(ex.getMessage());
-    error.setInstance(URI.create("/payment-initiation/payment-orders/" + ex.getPaymentOrderId()));
-    error.setTimestamp(OffsetDateTime.now());
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+        HttpStatus.NOT_FOUND,
+        ex.getMessage()
+    );
+    problemDetail.setType(URI.create("https://api.bank.com/errors/not-found"));
+    problemDetail.setTitle("Payment Order Not Found");
+    problemDetail.setProperty("paymentOrderId", ex.getPaymentOrderId());
+    problemDetail.setProperty("timestamp", OffsetDateTime.now());
+    problemDetail.setInstance(URI.create("/payment-initiation/payment-orders/" 
+        + ex.getPaymentOrderId()));
 
-    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problemDetail);
   }
 
   /**
    * Maneja InvalidPaymentOrderException.
    */
   @ExceptionHandler(InvalidPaymentOrderException.class)
-  public ResponseEntity<ErrorResponse> handleInvalidPaymentOrder(
+  public ResponseEntity<ProblemDetail> handleInvalidPaymentOrder(
       InvalidPaymentOrderException ex) {
 
-    ErrorResponse error = new ErrorResponse();
-    error.setType(URI.create("https://api.bank.com/errors/validation-error"));
-    error.setTitle("Invalid Payment Order");
-    error.setStatus(HttpStatus.BAD_REQUEST.value());
-    error.setDetail(ex.getMessage());
-    error.setInstance(URI.create("/payment-initiation/payment-orders"));
-    error.setTimestamp(OffsetDateTime.now());
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+        HttpStatus.BAD_REQUEST,
+        ex.getMessage()
+    );
+    problemDetail.setType(URI.create("https://api.bank.com/errors/validation-error"));
+    problemDetail.setTitle("Invalid Payment Order");
+    problemDetail.setProperty("timestamp", OffsetDateTime.now());
+    problemDetail.setInstance(URI.create("/payment-initiation/payment-orders"));
 
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
   }
 
   /**
    * Maneja errores de validación de Bean Validation.
    */
   @ExceptionHandler(WebExchangeBindException.class)
-  public ResponseEntity<ErrorResponse> handleValidationErrors(WebExchangeBindException ex) {
+  public ResponseEntity<ProblemDetail> handleValidationErrors(WebExchangeBindException ex) {
 
     String details = ex.getBindingResult()
         .getFieldErrors()
@@ -70,31 +75,33 @@ public class GlobalExceptionHandler {
         .reduce((a, b) -> a + ", " + b)
         .orElse("Validation error");
 
-    ErrorResponse error = new ErrorResponse();
-    error.setType(URI.create("https://api.bank.com/errors/validation-error"));
-    error.setTitle("Validation Error");
-    error.setStatus(HttpStatus.BAD_REQUEST.value());
-    error.setDetail(details);
-    error.setInstance(URI.create("/payment-initiation/payment-orders"));
-    error.setTimestamp(OffsetDateTime.now());
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+        HttpStatus.BAD_REQUEST,
+        details
+    );
+    problemDetail.setType(URI.create("https://api.bank.com/errors/validation-error"));
+    problemDetail.setTitle("Validation Error");
+    problemDetail.setProperty("timestamp", OffsetDateTime.now());
+    problemDetail.setInstance(URI.create("/payment-initiation/payment-orders"));
 
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
   }
 
   /**
    * Maneja excepciones genéricas.
    */
   @ExceptionHandler(Exception.class)
-  public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
+  public ResponseEntity<ProblemDetail> handleGenericException(Exception ex) {
     log.error("Unexpected error occurred", ex);
 
-    ErrorResponse error = new ErrorResponse();
-    error.setType(URI.create("https://api.bank.com/errors/internal-error"));
-    error.setTitle("Internal Server Error");
-    error.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-    error.setDetail("An unexpected error occurred: " + ex.getMessage());
-    error.setTimestamp(OffsetDateTime.now());
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred"
+    );
+    problemDetail.setType(URI.create("https://api.bank.com/errors/internal-error"));
+    problemDetail.setTitle("Internal Server Error");
+    problemDetail.setProperty("timestamp", OffsetDateTime.now());
 
-    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail);
   }
 }

@@ -10,4 +10,12 @@
         <Class name="~.*\.adapter\.in\.rest\.model\..*"/>
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     </Match>
+    
+    <!-- Exclude reflection warnings in PaymentOrderPersistenceMapper -->
+    <!-- Uso intencional de reflexión para setear campos privados desde la base de datos -->
+    <Match>
+        <Class name="com.banking.payment.orders.adapter.out.persistence.mapper.PaymentOrderPersistenceMapper"/>
+        <Method name="toDomain"/>
+        <Bug pattern="DP_DO_INSIDE_DO_PRIVILEGED,REC_CATCH_EXCEPTION"/>
+    </Match>
 </FindBugsFilter>

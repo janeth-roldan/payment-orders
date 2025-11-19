@@ -7,9 +7,11 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeAll;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -30,7 +32,8 @@ class PaymentOrderControllerIntegrationTest {
   static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
       .withDatabaseName("testdb")
       .withUsername("testuser")
-      .withPassword("testpass");
+      .withPassword("testpass")
+      .withInitScript("schema.sql");
 
   @DynamicPropertySource
   static void configureProperties(DynamicPropertyRegistry registry) {

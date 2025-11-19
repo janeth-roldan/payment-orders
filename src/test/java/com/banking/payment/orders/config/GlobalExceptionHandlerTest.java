@@ -1,6 +1,5 @@
 package com.banking.payment.orders.config;
 
-import com.banking.payment.orders.adapter.in.rest.model.ErrorResponse;
 import com.banking.payment.orders.domain.exception.InvalidPaymentOrderException;
 import com.banking.payment.orders.domain.exception.PaymentOrderNotFoundException;
 import java.util.UUID;
@@ -8,12 +7,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * GlobalExceptionHandlerTest - Tests para GlobalExceptionHandler.
+ * GlobalExceptionHandlerTest - Tests para GlobalExceptionHandler con ProblemDetail.
  */
 class GlobalExceptionHandlerTest {
 
@@ -32,7 +32,7 @@ class GlobalExceptionHandlerTest {
     PaymentOrderNotFoundException exception = new PaymentOrderNotFoundException(orderId);
 
     // When
-    ResponseEntity<ErrorResponse> response = handler.handlePaymentOrderNotFound(exception);
+    ResponseEntity<ProblemDetail> response = handler.handlePaymentOrderNotFound(exception);
 
     // Then
     assertThat(response).isNotNull();
@@ -41,7 +41,8 @@ class GlobalExceptionHandlerTest {
     assertThat(response.getBody().getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
     assertThat(response.getBody().getTitle()).isEqualTo("Payment Order Not Found");
     assertThat(response.getBody().getDetail()).contains(orderId.toString());
-    assertThat(response.getBody().getTimestamp()).isNotNull();
+    assertThat(response.getBody().getProperties()).containsKey("timestamp");
+    assertThat(response.getBody().getProperties()).containsKey("paymentOrderId");
   }
 
   @Test
@@ -52,7 +53,7 @@ class GlobalExceptionHandlerTest {
         "Invalid payment data");
 
     // When
-    ResponseEntity<ErrorResponse> response = handler.handleInvalidPaymentOrder(exception);
+    ResponseEntity<ProblemDetail> response = handler.handleInvalidPaymentOrder(exception);
 
     // Then
     assertThat(response).isNotNull();
@@ -61,6 +62,7 @@ class GlobalExceptionHandlerTest {
     assertThat(response.getBody().getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
     assertThat(response.getBody().getTitle()).isEqualTo("Invalid Payment Order");
     assertThat(response.getBody().getDetail()).isEqualTo("Invalid payment data");
+    assertThat(response.getBody().getProperties()).containsKey("timestamp");
   }
 
   @Test
@@ -70,7 +72,7 @@ class GlobalExceptionHandlerTest {
     Exception exception = new RuntimeException("Unexpected error");
 
     // When
-    ResponseEntity<ErrorResponse> response = handler.handleGenericException(exception);
+    ResponseEntity<ProblemDetail> response = handler.handleGenericException(exception);
 
     // Then
     assertThat(response).isNotNull();
@@ -80,6 +82,7 @@ class GlobalExceptionHandlerTest {
         .isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.value());
     assertThat(response.getBody().getTitle()).isEqualTo("Internal Server Error");
     assertThat(response.getBody().getDetail()).contains("An unexpected error occurred");
+    assertThat(response.getBody().getProperties()).containsKey("timestamp");
   }
 
   @Test
@@ -90,10 +93,11 @@ class GlobalExceptionHandlerTest {
         UUID.randomUUID());
 
     // When
-    ResponseEntity<ErrorResponse> response = handler.handlePaymentOrderNotFound(exception);
+    ResponseEntity<ProblemDetail> response = handler.handlePaymentOrderNotFound(exception);
 
     // Then
     assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getTimestamp()).isNotNull();
+    assertThat(response.getBody().getProperties()).isNotNull();
+    assertThat(response.getBody().getProperties()).containsKey("timestamp");
   }
 }
