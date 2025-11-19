@@ -7,6 +7,105 @@ Migración de servicios de pago SOAP legados a API REST alineada con BIAN (Banki
 
 ---
 
+## Reglas de Documentación (OBLIGATORIO)
+
+### Convención de Archivos de Documentación
+- **Ubicación**: Todos los documentos deben generarse en la carpeta `doc/`
+- **Formato**: Usar formato Markdown (extensión `.md`)
+- **Idioma**: Todos los documentos deben estar en **español**
+- **Nomenclatura**: Usar **snake_case** para nombres de archivos
+  - ✅ Correcto: `analisis_migracion.md`, `decisiones_arquitectura.md`, `guia_instalacion.md`
+  - ❌ Incorrecto: `AnalisisMigracion.md`, `decisiones-arquitectura.md`, `Guía Instalación.md`
+
+### Estructura de Carpeta `doc/`
+```
+doc/
+├── instrucciones.md              # Instrucciones del ejercicio (proporcionado)
+├── analisis_migracion.md         # Análisis WSDL y mapeo a REST
+├── decisiones_arquitectura.md    # Decisiones de diseño
+├── guia_instalacion.md           # Pasos de instalación y ejecución
+├── PaymentOrderService.wsdl      # WSDL original (proporcionado)
+├── postman_collection.json       # Colección Postman (proporcionado)
+└── ejemplos/                     # Carpeta para ejemplos XML/JSON
+    ├── SubmitPaymentOrderRequest.xml
+    ├── SubmitPaymentOrderResponse.xml
+    ├── GetPaymentOrderStatusRequest.xml
+    └── GetPaymentOrderStatusResponse.xml
+```
+
+### Reglas de Calidad de Documentación (OBLIGATORIO)
+
+**Al actualizar cualquier documento en `doc/`, SIEMPRE verificar**:
+
+#### 1. Tabla de Contenidos
+- ✅ Debe existir al inicio del documento (después del título principal)
+- ✅ Debe incluir enlaces internos a todas las secciones principales
+- ✅ Debe usar formato Markdown con anclas (`[Texto](#seccion)`)
+- ✅ Debe estar actualizada con todas las secciones del documento
+
+#### 2. Estructura del Documento
+- ✅ Título principal con `#` (H1) - solo uno por documento
+- ✅ Secciones principales con `##` (H2)
+- ✅ Subsecciones con `###` (H3) y `####` (H4)
+- ✅ Uso consistente de separadores `---` entre secciones principales
+- ✅ Información del documento al final (versión, fecha, estado)
+
+#### 3. Códigos de Ejemplo
+- ✅ Todos los ejemplos JSON deben tener sintaxis válida
+- ✅ Todos los ejemplos XML deben tener sintaxis válida
+- ✅ Usar bloques de código con lenguaje especificado: ` ```json `, ` ```xml `, ` ```java `
+- ✅ Incluir comentarios explicativos cuando sea necesario
+- ✅ Ejemplos de Request y Response para cada endpoint
+
+#### 4. Ejemplos Request/Response
+**Para cada endpoint documentado, incluir**:
+- ✅ Ejemplo de Request completo (si aplica)
+- ✅ Ejemplo de Response exitoso (200/201)
+- ✅ Ejemplo de Response de error (400/404/500) cuando sea relevante
+- ✅ Headers importantes (Content-Type, Location, etc.)
+- ✅ Formato consistente (JSON con indentación de 2 espacios)
+
+#### 5. Tablas de Mapeo
+**Todas las tablas de mapeo deben incluir**:
+- ✅ Columna de origen (Campo SOAP, Campo REST, etc.)
+- ✅ Columna de destino (Campo REST, Campo BIAN, etc.)
+- ✅ Columna de tipo de dato
+- ✅ Columna de obligatoriedad (Sí/No/Opcional)
+- ✅ Columna de notas o descripción
+- ✅ **Columna de mapeo BIAN completo** (Ruta completa: `PaymentOrderProcedure.Campo`)
+- ✅ Formato Markdown correcto con alineación de columnas
+- ✅ Separación clara entre tablas de diferentes endpoints
+
+#### 6. Enlaces y Referencias
+- ✅ Todos los enlaces externos deben ser válidos y accesibles
+- ✅ Enlaces a BIAN deben apuntar a la versión correcta (12.0)
+- ✅ Enlaces internos deben funcionar correctamente
+- ✅ Agrupar enlaces por categoría (BIAN, ISO, Documentación técnica, etc.)
+
+#### 7. Consistencia de Nomenclatura
+- ✅ Nombres de campos consistentes en todo el documento
+- ✅ Usar nomenclatura BIAN oficial para campos mapeados
+- ✅ Usar camelCase para campos REST
+- ✅ Usar PascalCase para campos BIAN
+- ✅ Usar UPPER_CASE para estados/enums
+
+#### Checklist de Revisión Pre-Commit
+Antes de confirmar cambios en documentos, verificar:
+```markdown
+- [ ] Tabla de contenidos actualizada
+- [ ] Estructura de secciones correcta
+- [ ] Todos los códigos de ejemplo son válidos
+- [ ] Request/Response completos para cada endpoint
+- [ ] Tablas de mapeo incluyen columna BIAN completa
+- [ ] Enlaces verificados y funcionando
+- [ ] Nomenclatura consistente
+- [ ] Sin errores de ortografía
+- [ ] Formato Markdown correcto
+- [ ] Información de versión actualizada
+```
+
+---
+
 ## Stack Tecnológico (OBLIGATORIO)
 
 ### Tecnologías Core
@@ -187,21 +286,34 @@ src/main/java/com/bank/paymentorders/
 ## Documentación de Uso de IA (OBLIGATORIO)
 
 ### Documentación Requerida
-Crear carpeta `ai/` con:
+Crear carpeta `ai/` con archivos en **español** y nomenclatura **snake_case**:
 
-1. **prompts.md**: Todos los prompts usados con IA
+1. **prompts.md**: Todos los prompts usados con IA (en español)
    - Prompt para análisis de WSDL
    - Prompt para generación de OpenAPI
    - Prompt para esqueleto de arquitectura hexagonal
    - Prompt para generación de tests
 
-2. **generations/**: Carpeta con fragmentos de código generados por IA
+2. **generaciones/**: Carpeta con fragmentos de código generados por IA
    - Guardar outputs iniciales de IA antes de correcciones manuales
+   - Archivos con nomenclatura: `generacion_openapi.yaml`, `generacion_dominio.java`, etc.
 
-3. **decisions.md**: Documentar correcciones manuales
+3. **decisiones.md**: Documentar correcciones manuales (en español)
    - Qué se cambió del output de IA
    - Por qué se cambió
    - Proceso de validación
+
+### Estructura de Carpeta `ai/`
+```
+ai/
+├── prompts.md                    # Todos los prompts en español
+├── decisiones.md                 # Decisiones y correcciones manuales
+└── generaciones/                 # Código generado por IA
+    ├── generacion_openapi.yaml
+    ├── generacion_entidades.java
+    ├── generacion_tests.java
+    └── generacion_dockerfile.txt
+```
 
 ### Plantilla de Prompt de IA
 ```markdown
@@ -356,14 +468,21 @@ Antes de entregar, verificar:
 ## Resumen de Entregables
 
 1. **Repositorio**: Repositorio Git con historial de commits limpio
-2. **README.md**: Documentación completa
-3. **openapi.yaml**: Contrato de API REST
+2. **README.md**: Documentación completa en español
+3. **openapi.yaml**: Contrato de API REST en `src/main/resources/api/`
 4. **Código Fuente**: Implementación de arquitectura hexagonal
 5. **Tests**: Unitarios + Integración (≥80% cobertura)
 6. **Reportes de Calidad**: JaCoCo, Checkstyle, SpotBugs
 7. **Docker**: Dockerfile + docker-compose.yml
-8. **Documentación de IA**: Carpeta `ai/` con prompts y decisiones
-9. **Colección Postman**: Actualizada y probada
+8. **Documentación Técnica**: Carpeta `doc/` con archivos `.md` en español y snake_case
+   - `doc/analisis_migracion.md`
+   - `doc/decisiones_arquitectura.md`
+   - `doc/guia_instalacion.md`
+9. **Documentación de IA**: Carpeta `ai/` con archivos en español y snake_case
+   - `ai/prompts.md`
+   - `ai/decisiones.md`
+   - `ai/generaciones/`
+10. **Colección Postman**: Actualizada y probada en `doc/postman_collection.json`
 
 ---
 
