@@ -12,12 +12,13 @@
 
 1. [Análisis del WSDL Legado](#-análisis-del-wsdl-legado)
 2. [Mapeo a BIAN Payment Initiation](#-mapeo-a-bian-payment-initiation)
-3. [Modelo de Datos BIAN 12.0](#-modelo-de-datos-bian-120)
+3. [Estructura de Entidades BIAN](#-estructura-de-entidades-bian)
 4. [Mapeo Detallado de Campos](#-mapeo-detallado-de-campos)
-5. [Mapeo de Estados](#-mapeo-de-estados)
-6. [Arquitectura Hexagonal](#-arquitectura-hexagonal)
-7. [Estrategia de Testing](#-estrategia-de-testing)
-8. [Referencias BIAN](#-referencias-bian)
+5. [Ejemplos Request/Response](#-ejemplos-requestresponse)
+6. [Validaciones OpenAPI](#-validaciones-openapi)
+7. [Mapeo de Estados](#-mapeo-de-estados)
+8. [Arquitectura Hexagonal](#-arquitectura-hexagonal)
+9. [Referencias BIAN](#-referencias-bian)
 
 ---
 
@@ -30,13 +31,13 @@
 
 ### Operaciones SOAP
 
-| Operación | Propósito | Request | Response |
-|-----------|-----------|---------|----------|
+| Operación | Propósito | Campos Request | Campos Response |
+|-----------|-----------|----------------|-----------------|
 | **SubmitPaymentOrder** | Enviar nueva orden de pago | externalId, debtorIban, creditorIban, amount, currency, remittanceInfo, requestedExecutionDate | paymentOrderId, status |
 | **GetPaymentOrderStatus** | Consultar estado de orden | paymentOrderId | paymentOrderId, status, lastUpdate |
 
-### Estados SOAP
-- **ACCEPTED**: Orden aceptada
+### Estados SOAP Identificados
+- **ACCEPTED**: Orden aceptada por el sistema
 - **SETTLED**: Orden completada/liquidada
 - **REJECTED**: Orden rechazada (implícito)
 - **PENDING**: En proceso (implícito)
@@ -51,7 +52,8 @@
 - **Versión**: 12.0
 - **BOM Diagram**: https://bian.org/servicelandscape-12-0-0/views/view_28713.html
 
-> **IMPORTANTE**: El Control Record oficial se denomina `PaymentOrderProcedure` según BIAN Service Landscape 12.0
+> **IMPORTANTE**: El Control Record oficial se denomina `PaymentOrderProcedure` según BIAN Service Landscape 12.0.  
+> El OpenAPI usa nomenclatura BIAN con entidades anidadas que representen el modelo completo.
 
 ### Endpoints REST Propuestos
 
@@ -63,37 +65,53 @@
 
 ---
 
-## 📐 Modelo de Datos BIAN 12.0
+## 📐 Estructura de Entidades BIAN
 
-### PaymentOrderProcedure (Control Record)
+### PaymentOrderProcedure (Control Record Principal)
+
+El Control Record principal que contiene toda la información de la orden de pago, organizado en entidades anidadas según el modelo BIAN 12.0.
 
 ```
-PaymentInitiation (Service Domain)
-    └── PaymentOrderProcedure (Control Record)
-        ├── PaymentOrderProcedureInstanceReference: string (ID único)
-        ├── PaymentOrderProcedureInstanceStatus: enum
-        ├── PaymentTransactionInitiatorReference: string
-        │
-        ├── Payer (Debtor):
-        │   ├── PayerReference: string
-        │   ├── PayerBankReference: string
-        │   └── PayerProductInstanceReference: string (IBAN)
-        │
-        ├── Payee (Creditor):
-        │   ├── PayeeReference: string
-        │   ├── PayeeBankReference: string
-        │   └── PayeeProductInstanceReference: string (IBAN)
-        │
-        ├── Payment Details:
-        │   ├── Amount: decimal
-        │   ├── Currency: string (ISO 4217)
-        │   ├── PaymentMechanismType: string
-        │   └── PaymentOrderProcedureInstanceRecord: object
-        │
-        └── Date Information:
-            ├── DateType: string
-            └── Date: date (ISO 8601)
+PaymentOrderProcedure
+├── paymentTransactionInitiatorReference (string)
+├── payer (Payer)
+│   ├── payerReference (string)
+│   ├── payerBankReference (string)
+│   └── payerProductInstanceReference (string)
+├── payee (Payee)
+│   ├── payeeReference (string)
+│   ├── payeeBankReference (string)
+│   └── payeeProductInstanceReference (string)
+├── paymentDetails (PaymentDetails)
+│   ├── amount (decimal)
+│   ├── currency (string)
+│   └── paymentMechanismType (string)
+├── dateInformation (DateInformation)
+│   ├── dateType (string)
+│   └── date (date)
+└── remittanceInformation (string)
 ```
+
+### Entidades BIAN Definidas
+
+#### 1. Payer (Información del Pagador/Deudor)
+- **payerReference**: Nombre o referencia del pagador
+- **payerBankReference**: Referencia del banco del pagador (opcional)
+- **payerProductInstanceReference**: IBAN o número de cuenta del pagador
+
+#### 2. Payee (Información del Beneficiario/Acreedor)
+- **payeeReference**: Nombre o referencia del beneficiario
+- **payeeBankReference**: Referencia del banco del beneficiario (opcional)
+- **payeeProductInstanceReference**: IBAN o número de cuenta del beneficiario
+
+#### 3. PaymentDetails (Detalles del Pago)
+- **amount**: Monto de la transacción (decimal)
+- **currency**: Código de moneda ISO 4217 (USD, EUR, etc.)
+- **paymentMechanismType**: Tipo de mecanismo de pago (CreditTransfer, DirectDebit, etc.)
+
+#### 4. DateInformation (Información de Fechas)
+- **dateType**: Tipo de fecha (ej: "RequestedExecutionDate", "ValueDate")
+- **date**: Valor de la fecha en formato ISO 8601 (YYYY-MM-DD)
 
 ### Estados BIAN (Enum)
 - `Initiated` - Orden iniciada
@@ -111,104 +129,111 @@ PaymentInitiation (Service Domain)
 ## 📊 Mapeo Detallado de Campos
 
 > **Referencia BIAN**: Todos los campos están mapeados según el BOM Diagram oficial de BIAN 12.0  
-> **Control Record**: `PaymentOrderProcedure`  
 > **Enlace**: https://bian.org/servicelandscape-12-0-0/views/view_28713.html
-
-### Resumen de Mapeo por Endpoint
-
-| Endpoint | Método | Campos BIAN Principales | Propósito |
-|----------|--------|------------------------|-----------|
-| `/payment-initiation/payment-orders` | POST | PaymentTransactionInitiatorReference, PayerProductInstanceReference, PayeeProductInstanceReference, Amount, Currency, Date | Iniciar orden de pago |
-| `/payment-initiation/payment-orders/{id}` | GET | PaymentOrderProcedureInstanceReference + todos los campos del POST | Recuperar orden completa |
-| `/payment-initiation/payment-orders/{id}/status` | GET | PaymentOrderProcedureInstanceReference, PaymentOrderProcedureInstanceStatus | Consultar solo el estado |
 
 ### POST /payment-initiation/payment-orders (Initiate)
 
-#### Request - Tabla de Mapeo SOAP → REST → BIAN
+#### Request - Tabla de Mapeo SOAP → BIAN con Entidades
 
-| Campo SOAP | Campo REST | Campo BIAN 12.0 (BOM) | Ruta Completa BIAN | Tipo | Obligatorio |
-|------------|------------|----------------------|-------------------|------|-------------|
-| externalId | externalReference | PaymentTransactionInitiatorReference | PaymentOrderProcedure.PaymentTransactionInitiatorReference | string | Sí |
-| debtorIban | debtorAccount.iban | PayerProductInstanceReference | PaymentOrderProcedure.PayerProductInstanceReference | string (IBAN) | Sí |
-| - | debtorAccount.name | PayerReference | PaymentOrderProcedure.PayerReference | string | No |
-| - | - | PayerBankReference | PaymentOrderProcedure.PayerBankReference | string | No |
-| creditorIban | creditorAccount.iban | PayeeProductInstanceReference | PaymentOrderProcedure.PayeeProductInstanceReference | string (IBAN) | Sí |
-| - | creditorAccount.name | PayeeReference | PaymentOrderProcedure.PayeeReference | string | No |
-| - | - | PayeeBankReference | PaymentOrderProcedure.PayeeBankReference | string | No |
-| amount | instructedAmount.amount | Amount | PaymentOrderProcedure.Amount | decimal | Sí |
-| currency | instructedAmount.currency | Currency | PaymentOrderProcedure.Currency | string (ISO 4217) | Sí |
-| remittanceInfo | remittanceInformation | PaymentMechanismType | PaymentOrderProcedure.PaymentMechanismType | string | No |
-| requestedExecutionDate | requestedExecutionDate | Date | PaymentOrderProcedure.Date (cuando DateType="RequestedExecutionDate") | date (ISO 8601) | Sí |
+| Campo SOAP | Entidad BIAN | Campo BIAN | Ruta Completa OpenAPI | Tipo | Obligatorio |
+|------------|--------------|------------|----------------------|------|-------------|
+| externalId | PaymentOrderProcedure | paymentTransactionInitiatorReference | paymentOrderProcedure.paymentTransactionInitiatorReference | string | Sí |
+| debtorIban | Payer | payerProductInstanceReference | paymentOrderProcedure.payer.payerProductInstanceReference | string (IBAN) | Sí |
+| - | Payer | payerReference | paymentOrderProcedure.payer.payerReference | string | No |
+| - | Payer | payerBankReference | paymentOrderProcedure.payer.payerBankReference | string | No |
+| creditorIban | Payee | payeeProductInstanceReference | paymentOrderProcedure.payee.payeeProductInstanceReference | string (IBAN) | Sí |
+| - | Payee | payeeReference | paymentOrderProcedure.payee.payeeReference | string | No |
+| - | Payee | payeeBankReference | paymentOrderProcedure.payee.payeeBankReference | string | No |
+| amount | PaymentDetails | amount | paymentOrderProcedure.paymentDetails.amount | decimal | Sí |
+| currency | PaymentDetails | currency | paymentOrderProcedure.paymentDetails.currency | string (ISO 4217) | Sí |
+| remittanceInfo | PaymentDetails | paymentMechanismType | paymentOrderProcedure.paymentDetails.paymentMechanismType | string | No |
+| requestedExecutionDate | DateInformation | date | paymentOrderProcedure.dateInformation.date | date (ISO 8601) | Sí |
+| - | DateInformation | dateType | paymentOrderProcedure.dateInformation.dateType | string | Sí (valor fijo) |
+| - | PaymentOrderProcedure | remittanceInformation | paymentOrderProcedure.remittanceInformation | string | No |
 
-#### Response - Tabla de Mapeo REST → BIAN
+#### Response - Tabla de Mapeo BIAN
 
-| Campo REST | Campo BIAN 12.0 (BOM) | Ruta Completa BIAN | Tipo | Descripción |
-|------------|----------------------|-------------------|------|-------------|
-| paymentOrderId | PaymentOrderProcedureInstanceReference | PaymentOrderProcedure.PaymentOrderProcedureInstanceReference | string (UUID) | ID único de la orden |
-| status | PaymentOrderProcedureInstanceStatus | PaymentOrderProcedure.PaymentOrderProcedureInstanceStatus | enum | Estado actual |
-| createdDateTime | - | - | datetime (ISO 8601) | Timestamp de creación (campo REST adicional) |
-| _links.self | - | - | object | HATEOAS link (campo REST adicional) |
-| _links.status | - | - | object | HATEOAS link (campo REST adicional) |
+| Campo REST | Entidad BIAN | Campo BIAN | Ruta Completa OpenAPI | Tipo | Descripción |
+|------------|--------------|------------|----------------------|------|-------------|
+| paymentOrderProcedureInstanceReference | PaymentOrderProcedure | paymentOrderProcedureInstanceReference | paymentOrderProcedure.paymentOrderProcedureInstanceReference | string (UUID) | ID único de la orden |
+| paymentOrderProcedureInstanceStatus | PaymentOrderProcedure | paymentOrderProcedureInstanceStatus | paymentOrderProcedure.paymentOrderProcedureInstanceStatus | enum | Estado actual |
+| createdDateTime | _metadata | createdDateTime | _metadata.createdDateTime | datetime (ISO 8601) | Timestamp de creación |
+| self | _links | self.href | _links.self.href | string (URI) | Link HATEOAS a la orden |
 
 ### GET /payment-initiation/payment-orders/{id} (Retrieve)
 
-#### Response - Tabla de Mapeo REST → BIAN
+#### Response - Tabla de Mapeo BIAN Completo
 
-| Campo REST | Campo BIAN 12.0 (BOM) | Ruta Completa BIAN | Tipo | Descripción |
-|------------|----------------------|-------------------|------|-------------|
-| paymentOrderId | PaymentOrderProcedureInstanceReference | PaymentOrderProcedure.PaymentOrderProcedureInstanceReference | string (UUID) | ID único de la orden |
-| externalReference | PaymentTransactionInitiatorReference | PaymentOrderProcedure.PaymentTransactionInitiatorReference | string | Referencia externa |
-| debtorAccount.iban | PayerProductInstanceReference | PaymentOrderProcedure.PayerProductInstanceReference | string (IBAN) | IBAN del pagador |
-| debtorAccount.name | PayerReference | PaymentOrderProcedure.PayerReference | string | Nombre del pagador |
-| creditorAccount.iban | PayeeProductInstanceReference | PaymentOrderProcedure.PayeeProductInstanceReference | string (IBAN) | IBAN del beneficiario |
-| creditorAccount.name | PayeeReference | PaymentOrderProcedure.PayeeReference | string | Nombre del beneficiario |
-| instructedAmount.amount | Amount | PaymentOrderProcedure.Amount | decimal | Monto de la transacción |
-| instructedAmount.currency | Currency | PaymentOrderProcedure.Currency | string (ISO 4217) | Código de moneda |
-| remittanceInformation | PaymentMechanismType | PaymentOrderProcedure.PaymentMechanismType | string | Información de remesa |
-| requestedExecutionDate | Date | PaymentOrderProcedure.Date | date (ISO 8601) | Fecha de ejecución solicitada |
-| status | PaymentOrderProcedureInstanceStatus | PaymentOrderProcedure.PaymentOrderProcedureInstanceStatus | enum | Estado actual |
-| createdDateTime | - | - | datetime (ISO 8601) | Timestamp de creación (campo REST adicional) |
-| lastUpdateDateTime | - | - | datetime (ISO 8601) | Última actualización (campo REST adicional) |
+| Campo REST | Entidad BIAN | Ruta Completa OpenAPI | Tipo | Descripción |
+|------------|--------------|----------------------|------|-------------|
+| paymentOrderProcedureInstanceReference | PaymentOrderProcedure | paymentOrderProcedure.paymentOrderProcedureInstanceReference | string (UUID) | ID único |
+| paymentTransactionInitiatorReference | PaymentOrderProcedure | paymentOrderProcedure.paymentTransactionInitiatorReference | string | Referencia externa |
+| payer | Payer | paymentOrderProcedure.payer | object | Información del pagador |
+| payee | Payee | paymentOrderProcedure.payee | object | Información del beneficiario |
+| paymentDetails | PaymentDetails | paymentOrderProcedure.paymentDetails | object | Detalles del pago |
+| dateInformation | DateInformation | paymentOrderProcedure.dateInformation | object | Información de fechas |
+| remittanceInformation | PaymentOrderProcedure | paymentOrderProcedure.remittanceInformation | string | Información de remesa |
+| paymentOrderProcedureInstanceStatus | PaymentOrderProcedure | paymentOrderProcedure.paymentOrderProcedureInstanceStatus | enum | Estado actual |
+| createdDateTime | _metadata | _metadata.createdDateTime | datetime | Timestamp de creación |
+| lastUpdateDateTime | _metadata | _metadata.lastUpdateDateTime | datetime | Última actualización |
 
 ### GET /payment-initiation/payment-orders/{id}/status (Retrieve Status)
 
-#### Response - Tabla de Mapeo REST → BIAN
+#### Response - Tabla de Mapeo BIAN
 
-| Campo REST | Campo BIAN 12.0 (BOM) | Ruta Completa BIAN | Tipo | Descripción |
-|------------|----------------------|-------------------|------|-------------|
-| paymentOrderId | PaymentOrderProcedureInstanceReference | PaymentOrderProcedure.PaymentOrderProcedureInstanceReference | string (UUID) | ID único de la orden |
-| status | PaymentOrderProcedureInstanceStatus | PaymentOrderProcedure.PaymentOrderProcedureInstanceStatus | enum | Estado actual |
-| lastUpdateDateTime | - | - | datetime (ISO 8601) | Última actualización (campo REST adicional) |
+| Campo REST | Entidad BIAN | Ruta Completa OpenAPI | Tipo | Descripción |
+|------------|--------------|----------------------|------|-------------|
+| paymentOrderProcedureInstanceReference | PaymentOrderProcedure | paymentOrderProcedure.paymentOrderProcedureInstanceReference | string (UUID) | ID único |
+| paymentOrderProcedureInstanceStatus | PaymentOrderProcedure | paymentOrderProcedure.paymentOrderProcedureInstanceStatus | enum | Estado actual |
+| lastUpdateDateTime | _metadata | _metadata.lastUpdateDateTime | datetime | Última actualización |
 
-### Ejemplo Request REST (POST)
+---
+
+## 📝 Ejemplos Request/Response
+
+### POST /payment-initiation/payment-orders
+
+#### Request Body (JSON)
 
 ```json
 {
-  "externalReference": "EXT-123",
-  "debtorAccount": {
-    "iban": "EC12DEBTOR",
-    "name": "Juan Pérez"
-  },
-  "creditorAccount": {
-    "iban": "EC98CREDITOR",
-    "name": "María López"
-  },
-  "instructedAmount": {
-    "amount": 150.75,
-    "currency": "USD"
-  },
-  "remittanceInformation": "Factura 001-123",
-  "requestedExecutionDate": "2025-10-31"
+  "paymentOrderProcedure": {
+    "paymentTransactionInitiatorReference": "EXT-123",
+    "payer": {
+      "payerReference": "Juan Pérez",
+      "payerBankReference": "BANK001",
+      "payerProductInstanceReference": "EC12DEBTOR"
+    },
+    "payee": {
+      "payeeReference": "María López",
+      "payeeBankReference": "BANK002",
+      "payeeProductInstanceReference": "EC98CREDITOR"
+    },
+    "paymentDetails": {
+      "amount": 150.75,
+      "currency": "USD",
+      "paymentMechanismType": "CreditTransfer"
+    },
+    "dateInformation": {
+      "dateType": "RequestedExecutionDate",
+      "date": "2025-10-31"
+    },
+    "remittanceInformation": "Factura 001-123"
+  }
 }
 ```
 
-### Ejemplo Response REST (POST)
+#### Response Body (201 Created)
 
 ```json
 {
-  "paymentOrderId": "550e8400-e29b-41d4-a716-446655440000",
-  "status": "INITIATED",
-  "createdDateTime": "2025-10-30T14:30:00Z",
+  "paymentOrderProcedure": {
+    "paymentOrderProcedureInstanceReference": "550e8400-e29b-41d4-a716-446655440000",
+    "paymentOrderProcedureInstanceStatus": "Initiated"
+  },
+  "_metadata": {
+    "createdDateTime": "2025-10-30T14:30:00Z"
+  },
   "_links": {
     "self": {
       "href": "/payment-initiation/payment-orders/550e8400-e29b-41d4-a716-446655440000"
@@ -220,94 +245,115 @@ PaymentInitiation (Service Domain)
 }
 ```
 
-### Ejemplo Response REST (GET /{id})
+### GET /payment-initiation/payment-orders/{id}
+
+#### Response Body (200 OK)
 
 ```json
 {
-  "paymentOrderId": "550e8400-e29b-41d4-a716-446655440000",
-  "externalReference": "EXT-123",
-  "debtorAccount": {
-    "iban": "EC12DEBTOR",
-    "name": "Juan Pérez"
+  "paymentOrderProcedure": {
+    "paymentOrderProcedureInstanceReference": "550e8400-e29b-41d4-a716-446655440000",
+    "paymentTransactionInitiatorReference": "EXT-123",
+    "payer": {
+      "payerReference": "Juan Pérez",
+      "payerBankReference": "BANK001",
+      "payerProductInstanceReference": "EC12DEBTOR"
+    },
+    "payee": {
+      "payeeReference": "María López",
+      "payeeBankReference": "BANK002",
+      "payeeProductInstanceReference": "EC98CREDITOR"
+    },
+    "paymentDetails": {
+      "amount": 150.75,
+      "currency": "USD",
+      "paymentMechanismType": "CreditTransfer"
+    },
+    "dateInformation": {
+      "dateType": "RequestedExecutionDate",
+      "date": "2025-10-31"
+    },
+    "remittanceInformation": "Factura 001-123",
+    "paymentOrderProcedureInstanceStatus": "Completed"
   },
-  "creditorAccount": {
-    "iban": "EC98CREDITOR",
-    "name": "María López"
+  "_metadata": {
+    "createdDateTime": "2025-10-30T14:30:00Z",
+    "lastUpdateDateTime": "2025-10-30T16:25:30Z"
   },
-  "instructedAmount": {
-    "amount": 150.75,
-    "currency": "USD"
-  },
-  "remittanceInformation": "Factura 001-123",
-  "requestedExecutionDate": "2025-10-31",
-  "status": "COMPLETED",
-  "createdDateTime": "2025-10-30T14:30:00Z",
-  "lastUpdateDateTime": "2025-10-30T16:25:30Z"
+  "_links": {
+    "self": {
+      "href": "/payment-initiation/payment-orders/550e8400-e29b-41d4-a716-446655440000"
+    },
+    "status": {
+      "href": "/payment-initiation/payment-orders/550e8400-e29b-41d4-a716-446655440000/status"
+    }
+  }
 }
 ```
 
-### Ejemplo Response REST (GET /{id}/status)
+### GET /payment-initiation/payment-orders/{id}/status
+
+#### Response Body (200 OK)
 
 ```json
 {
-  "paymentOrderId": "550e8400-e29b-41d4-a716-446655440000",
-  "status": "COMPLETED",
-  "lastUpdateDateTime": "2025-10-30T16:25:30Z"
+  "paymentOrderProcedure": {
+    "paymentOrderProcedureInstanceReference": "550e8400-e29b-41d4-a716-446655440000",
+    "paymentOrderProcedureInstanceStatus": "Completed"
+  },
+  "_metadata": {
+    "lastUpdateDateTime": "2025-10-30T16:25:30Z"
+  }
 }
 ```
 
-### Notas Importantes sobre el Mapeo BIAN
+---
 
-> **Campos BIAN Adicionales Disponibles** (no mapeados en versión inicial):
-> - `PaymentOrderProcedure.PayerBankReference` - Referencia del banco del pagador
-> - `PaymentOrderProcedure.PayeeBankReference` - Referencia del banco del beneficiario
-> - `PaymentOrderProcedure.DateType` - Tipo de fecha (siempre "RequestedExecutionDate" en v1)
-> - `PaymentOrderProcedure.PaymentOrderProcedureInstanceRecord` - Registro completo de la orden
-> - `PaymentOrderProcedure.DocumentDirectoryEntryInstanceReference` - Referencia a documentos
->
-> **Campos REST Adicionales** (no están en BIAN):
-> - `createdDateTime` - Timestamp de creación (campo técnico REST)
-> - `lastUpdateDateTime` - Timestamp de última actualización (campo técnico REST)
-> - `_links` - HATEOAS links (patrón REST)
+## ✅ Validaciones OpenAPI
 
-### Validaciones OpenAPI
+### Validaciones por Campo
 
-| Campo REST | Campo BIAN | Validación | Descripción |
-|------------|------------|------------|-------------|
-| externalReference | PaymentTransactionInitiatorReference | required, maxLength: 50, pattern: `^[A-Z0-9-]+$` | Alfanumérico con guiones |
-| debtorAccount.iban | PayerProductInstanceReference | required, pattern: `^[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}$` | Formato IBAN válido |
-| debtorAccount.name | PayerReference | optional, maxLength: 100 | Nombre del pagador |
-| creditorAccount.iban | PayeeProductInstanceReference | required, pattern: `^[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}$` | Formato IBAN válido |
-| creditorAccount.name | PayeeReference | optional, maxLength: 100 | Nombre del beneficiario |
-| instructedAmount.amount | Amount | required, minimum: 0.01, maximum: 999999999.99, multipleOf: 0.01 | Monto con 2 decimales |
-| instructedAmount.currency | Currency | required, pattern: `^[A-Z]{3}$`, enum: [USD, EUR, etc.] | Código ISO 4217 |
-| remittanceInformation | PaymentMechanismType | optional, maxLength: 140 | Información de remesa |
-| requestedExecutionDate | Date | required, format: date, pattern: `^\d{4}-\d{2}-\d{2}$` | Formato ISO 8601 (YYYY-MM-DD) |
+| Campo BIAN | Validación | Descripción |
+|------------|------------|-------------|
+| paymentTransactionInitiatorReference | required, maxLength: 50, pattern: `^[A-Z0-9-]+$` | Alfanumérico con guiones |
+| payer.payerProductInstanceReference | required, pattern: `^[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}$` | Formato IBAN válido |
+| payer.payerReference | optional, maxLength: 100 | Nombre del pagador |
+| payer.payerBankReference | optional, maxLength: 50 | Referencia del banco |
+| payee.payeeProductInstanceReference | required, pattern: `^[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}$` | Formato IBAN válido |
+| payee.payeeReference | optional, maxLength: 100 | Nombre del beneficiario |
+| payee.payeeBankReference | optional, maxLength: 50 | Referencia del banco |
+| paymentDetails.amount | required, minimum: 0.01, maximum: 999999999.99, multipleOf: 0.01 | Monto con 2 decimales |
+| paymentDetails.currency | required, pattern: `^[A-Z]{3}$`, enum: [USD, EUR, etc.] | Código ISO 4217 |
+| paymentDetails.paymentMechanismType | optional, maxLength: 50 | Tipo de mecanismo |
+| dateInformation.dateType | required, enum: [RequestedExecutionDate, ValueDate] | Tipo de fecha |
+| dateInformation.date | required, format: date, pattern: `^\d{4}-\d{2}-\d{2}$` | Formato ISO 8601 |
+| remittanceInformation | optional, maxLength: 140 | Información de remesa |
 
 ---
 
 ## 🔄 Mapeo de Estados
 
-### Estados SOAP → REST
+### Estados SOAP → BIAN
 
-| Estado SOAP | Estado REST | Descripción |
+| Estado SOAP | Estado BIAN | Descripción |
 |-------------|-------------|-------------|
-| ACCEPTED | INITIATED | Orden iniciada y aceptada |
-| ACCEPTED | ACCEPTED | Orden validada y en proceso |
-| SETTLED | COMPLETED | Orden completada exitosamente |
-| - | PENDING | Orden pendiente de validación |
-| - | REJECTED | Orden rechazada |
-| - | FAILED | Orden fallida por error técnico |
-| - | CANCELLED | Orden cancelada por usuario |
+| ACCEPTED | Initiated | Orden iniciada y aceptada |
+| ACCEPTED | Accepted | Orden validada y en proceso |
+| SETTLED | Completed | Orden completada exitosamente |
+| SETTLED | Settled | Orden liquidada |
+| - | Pending | Orden pendiente de validación |
+| - | Rejected | Orden rechazada |
+| - | Failed | Orden fallida por error técnico |
+| - | Cancelled | Orden cancelada por usuario |
 
 ### Máquina de Estados
 
 ```
-INITIATED → PENDING → ACCEPTED → IN_PROGRESS → COMPLETED
+Initiated → Pending → Accepted → InProgress → Completed → Settled
     ↓          ↓          ↓            ↓
-REJECTED   REJECTED   FAILED       FAILED
+Rejected   Rejected   Failed       Failed
     ↓          ↓          ↓            ↓
-CANCELLED  CANCELLED  CANCELLED    CANCELLED
+Cancelled  Cancelled  Cancelled    Cancelled
 ```
 
 ---
@@ -317,13 +363,15 @@ CANCELLED  CANCELLED  CANCELLED    CANCELLED
 ### Estructura de Paquetes
 
 ```
-com.banking.paymentorders/
+com.bank.paymentorders/
 ├── domain/
 │   ├── model/
-│   │   ├── PaymentOrder.java
-│   │   ├── Account.java
-│   │   ├── Money.java
-│   │   └── PaymentOrderStatus.java
+│   │   ├── PaymentOrderProcedure.java
+│   │   ├── Payer.java
+│   │   ├── Payee.java
+│   │   ├── PaymentDetails.java
+│   │   ├── DateInformation.java
+│   │   └── PaymentOrderStatus.java (enum)
 │   ├── port/
 │   │   ├── in/
 │   │   │   ├── InitiatePaymentOrderUseCase.java
@@ -357,90 +405,6 @@ com.banking.paymentorders/
     ├── OpenApiConfig.java
     └── BeanConfig.java
 ```
-
-### Diagrama de Capas
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│              ADAPTER IN (REST Controller)                   │
-│  - Implementa interfaces generadas por OpenAPI             │
-│  - Mapea DTOs REST ↔ Domain Models                         │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-┌────────────────────────▼────────────────────────────────────┐
-│                  APPLICATION LAYER                          │
-│  - Orquesta casos de uso                                   │
-│  - Coordina puertos de entrada/salida                      │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-┌────────────────────────▼────────────────────────────────────┐
-│                    DOMAIN LAYER                             │
-│  - Lógica de negocio pura (sin dependencias externas)      │
-│  - Entidades, Value Objects, Enums                         │
-│  - Interfaces de puertos (in/out)                          │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-┌────────────────────────▼────────────────────────────────────┐
-│             ADAPTER OUT (Persistence)                       │
-│  - Implementa puertos de salida                            │
-│  - Mapea Domain Models ↔ Entities JPA/R2DBC                │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 🧪 Estrategia de Testing
-
-### Tests Unitarios (Domain Layer)
-**Objetivo**: ≥80% cobertura
-
-- `PaymentOrderTest` - Validar entidad y reglas de negocio
-- `AccountTest` - Validar value object
-- `MoneyTest` - Validar value object y operaciones
-- `PaymentOrderStatusTest` - Validar transiciones de estado
-
-### Tests de Integración (E2E)
-**Herramienta**: WebTestClient (Spring WebFlux)
-
-```java
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
-class PaymentOrderIntegrationTest {
-    
-    @Test
-    void shouldInitiatePaymentOrder() {
-        // POST /payment-initiation/payment-orders
-        // Verificar: 201 Created, response body, Location header
-    }
-    
-    @Test
-    void shouldRetrievePaymentOrder() {
-        // GET /payment-initiation/payment-orders/{id}
-        // Verificar: 200 OK, datos completos
-    }
-    
-    @Test
-    void shouldRetrievePaymentOrderStatus() {
-        // GET /payment-initiation/payment-orders/{id}/status
-        // Verificar: 200 OK, estado actual
-    }
-    
-    @Test
-    void shouldReturn404WhenPaymentOrderNotFound() {
-        // GET con ID inexistente
-        // Verificar: 404 Not Found, RFC 7807 error response
-    }
-}
-```
-
-### Métricas de Calidad
-
-| Métrica | Objetivo | Herramienta |
-|---------|----------|-------------|
-| Cobertura de Código | ≥80% | JaCoCo |
-| Violaciones Checkstyle | 0 | maven-checkstyle-plugin |
-| Bugs SpotBugs | 0 | spotbugs-maven-plugin |
-| Tests Unitarios | ≥50 tests | JUnit 5 |
-| Tests Integración | ≥10 tests | WebTestClient |
 
 ---
 

@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<suppressions>
+    <!-- Suppress VariableDeclarationUsageDistance for mapper classes -->
+    <suppress checks="VariableDeclarationUsageDistance"
+              files=".*Mapper\.java"/>
+    
+    <!-- Suppress for generated code -->
+    <suppress checks=".*"
+              files="target[\\/]generated-sources[\\/].*"/>
+</suppressions>

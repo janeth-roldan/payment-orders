@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Exclude generated code from OpenAPI Generator -->
+    <Match>
+        <Package name="~com\.banking\.paymentorders\.adapter\.in\.rest\.(model|api).*"/>
+    </Match>
+    
+    <!-- Exclude specific bug patterns for DTOs if needed -->
+    <Match>
+        <Class name="~.*\.adapter\.in\.rest\.model\..*"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+</FindBugsFilter>

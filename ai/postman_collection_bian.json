@@ -1,0 +1,382 @@
+{
+  "info": {
+    "name": "Payment Orders API - BIAN 12.0",
+    "_postman_id": "payment-orders-bian-v1",
+    "description": "Colección completa para probar la API REST de Payment Orders alineada con BIAN 12.0.\n\n**Service Domain**: Payment Initiation\n**Behavior Qualifier**: PaymentOrder\n**Control Record**: PaymentOrderProcedure",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "paymentOrderId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Initiate Payment Order",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Guardar el ID de la orden creada",
+              "if (pm.response.code === 201) {",
+              "    var jsonData = pm.response.json();",
+              "    var orderId = jsonData.paymentOrderProcedure.paymentOrderProcedureInstanceReference;",
+              "    pm.collectionVariables.set('paymentOrderId', orderId);",
+              "    console.log('Payment Order ID guardado: ' + orderId);",
+              "}",
+              "",
+              "// Validaciones",
+              "pm.test('Status code is 201', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Response has Location header', function () {",
+              "    pm.response.to.have.header('Location');",
+              "});",
+              "",
+              "pm.test('Response contains paymentOrderProcedure', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('paymentOrderProcedure');",
+              "    pm.expect(jsonData.paymentOrderProcedure).to.have.property('paymentOrderProcedureInstanceReference');",
+              "    pm.expect(jsonData.paymentOrderProcedure).to.have.property('paymentOrderProcedureInstanceStatus');",
+              "});",
+              "",
+              "pm.test('Status is Initiated', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.paymentOrderProcedure.paymentOrderProcedureInstanceStatus).to.eql('Initiated');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/payment-initiation/payment-orders",
+          "host": ["{{baseUrl}}"],
+          "path": ["payment-initiation", "payment-orders"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"paymentOrderProcedure\": {\n    \"paymentTransactionInitiatorReference\": \"EXT-2025-001\",\n    \"payer\": {\n      \"payerReference\": \"Juan Pérez\",\n      \"payerBankReference\": \"BANK001\",\n      \"payerProductInstanceReference\": \"EC1234567890123456789012\"\n    },\n    \"payee\": {\n      \"payeeReference\": \"María López\",\n      \"payeeBankReference\": \"BANK002\",\n      \"payeeProductInstanceReference\": \"EC9876543210987654321098\"\n    },\n    \"paymentDetails\": {\n      \"amount\": 150.75,\n      \"currency\": \"USD\",\n      \"paymentMechanismType\": \"CreditTransfer\"\n    },\n    \"dateInformation\": {\n      \"dateType\": \"RequestedExecutionDate\",\n      \"date\": \"2025-12-31\"\n    },\n    \"remittanceInformation\": \"Factura 001-123 - Pago de servicios\"\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "Inicia una nueva orden de pago.\n\n**Endpoint**: POST /payment-initiation/payment-orders\n**BIAN Operation**: Initiate\n\n**Campos BIAN**:\n- paymentTransactionInitiatorReference: Referencia externa del iniciador\n- payer: Información del pagador (deudor)\n- payee: Información del beneficiario (acreedor)\n- paymentDetails: Detalles del pago (monto, moneda, mecanismo)\n- dateInformation: Información de fechas\n- remittanceInformation: Información adicional de remesa"
+      },
+      "response": [
+        {
+          "name": "201 Created - Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentOrderProcedure\": {\n    \"paymentTransactionInitiatorReference\": \"EXT-2025-001\",\n    \"payer\": {\n      \"payerReference\": \"Juan Pérez\",\n      \"payerBankReference\": \"BANK001\",\n      \"payerProductInstanceReference\": \"EC1234567890123456789012\"\n    },\n    \"payee\": {\n      \"payeeReference\": \"María López\",\n      \"payeeBankReference\": \"BANK002\",\n      \"payeeProductInstanceReference\": \"EC9876543210987654321098\"\n    },\n    \"paymentDetails\": {\n      \"amount\": 150.75,\n      \"currency\": \"USD\",\n      \"paymentMechanismType\": \"CreditTransfer\"\n    },\n    \"dateInformation\": {\n      \"dateType\": \"RequestedExecutionDate\",\n      \"date\": \"2025-12-31\"\n    },\n    \"remittanceInformation\": \"Factura 001-123\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payment-initiation/payment-orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["payment-initiation", "payment-orders"]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Location",
+              "value": "/payment-initiation/payment-orders/550e8400-e29b-41d4-a716-446655440000"
+            }
+          ],
+          "body": "{\n  \"paymentOrderProcedure\": {\n    \"paymentOrderProcedureInstanceReference\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"paymentOrderProcedureInstanceStatus\": \"Initiated\"\n  },\n  \"_metadata\": {\n    \"createdDateTime\": \"2025-11-19T06:30:00Z\"\n  },\n  \"_links\": {\n    \"self\": {\n      \"href\": \"/payment-initiation/payment-orders/550e8400-e29b-41d4-a716-446655440000\"\n    },\n    \"status\": {\n      \"href\": \"/payment-initiation/payment-orders/550e8400-e29b-41d4-a716-446655440000/status\"\n    }\n  }\n}"
+        },
+        {
+          "name": "400 Bad Request - Validation Error",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentOrderProcedure\": {\n    \"paymentTransactionInitiatorReference\": \"EXT-001\",\n    \"payer\": {\n      \"payerProductInstanceReference\": \"INVALID_IBAN\"\n    },\n    \"payee\": {\n      \"payeeProductInstanceReference\": \"EC98CREDITOR\"\n    },\n    \"paymentDetails\": {\n      \"amount\": -100,\n      \"currency\": \"USD\"\n    },\n    \"dateInformation\": {\n      \"dateType\": \"RequestedExecutionDate\",\n      \"date\": \"2025-10-31\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payment-initiation/payment-orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["payment-initiation", "payment-orders"]
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"type\": \"https://api.bank.com/errors/validation-error\",\n  \"title\": \"Validation Error\",\n  \"status\": 400,\n  \"detail\": \"amount: must be greater than zero\",\n  \"instance\": \"/payment-initiation/payment-orders\",\n  \"timestamp\": \"2025-11-19T06:30:00Z\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "2. Retrieve Payment Order",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response contains complete payment order', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('paymentOrderProcedure');",
+              "    pm.expect(jsonData.paymentOrderProcedure).to.have.property('payer');",
+              "    pm.expect(jsonData.paymentOrderProcedure).to.have.property('payee');",
+              "    pm.expect(jsonData.paymentOrderProcedure).to.have.property('paymentDetails');",
+              "    pm.expect(jsonData.paymentOrderProcedure).to.have.property('dateInformation');",
+              "});",
+              "",
+              "pm.test('Response contains HATEOAS links', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('_links');",
+              "    pm.expect(jsonData._links).to.have.property('self');",
+              "    pm.expect(jsonData._links).to.have.property('status');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/payment-initiation/payment-orders/{{paymentOrderId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["payment-initiation", "payment-orders", "{{paymentOrderId}}"]
+        },
+        "description": "Recupera una orden de pago completa por su ID.\n\n**Endpoint**: GET /payment-initiation/payment-orders/{id}\n**BIAN Operation**: Retrieve\n\n**Nota**: Ejecuta primero \"1. Initiate Payment Order\" para obtener un ID válido."
+      },
+      "response": [
+        {
+          "name": "200 OK - Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payment-initiation/payment-orders/550e8400-e29b-41d4-a716-446655440000",
+              "host": ["{{baseUrl}}"],
+              "path": ["payment-initiation", "payment-orders", "550e8400-e29b-41d4-a716-446655440000"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"paymentOrderProcedure\": {\n    \"paymentOrderProcedureInstanceReference\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"paymentTransactionInitiatorReference\": \"EXT-2025-001\",\n    \"payer\": {\n      \"payerReference\": \"Juan Pérez\",\n      \"payerBankReference\": \"BANK001\",\n      \"payerProductInstanceReference\": \"EC1234567890123456789012\"\n    },\n    \"payee\": {\n      \"payeeReference\": \"María López\",\n      \"payeeBankReference\": \"BANK002\",\n      \"payeeProductInstanceReference\": \"EC9876543210987654321098\"\n    },\n    \"paymentDetails\": {\n      \"amount\": 150.75,\n      \"currency\": \"USD\",\n      \"paymentMechanismType\": \"CreditTransfer\"\n    },\n    \"dateInformation\": {\n      \"dateType\": \"RequestedExecutionDate\",\n      \"date\": \"2025-12-31\"\n    },\n    \"remittanceInformation\": \"Factura 001-123 - Pago de servicios\",\n    \"paymentOrderProcedureInstanceStatus\": \"Completed\"\n  },\n  \"_metadata\": {\n    \"createdDateTime\": \"2025-11-19T06:30:00Z\",\n    \"lastUpdateDateTime\": \"2025-11-19T08:45:30Z\"\n  },\n  \"_links\": {\n    \"self\": {\n      \"href\": \"/payment-initiation/payment-orders/550e8400-e29b-41d4-a716-446655440000\"\n    },\n    \"status\": {\n      \"href\": \"/payment-initiation/payment-orders/550e8400-e29b-41d4-a716-446655440000/status\"\n    }\n  }\n}"
+        },
+        {
+          "name": "404 Not Found",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payment-initiation/payment-orders/00000000-0000-0000-0000-000000000000",
+              "host": ["{{baseUrl}}"],
+              "path": ["payment-initiation", "payment-orders", "00000000-0000-0000-0000-000000000000"]
+            }
+          },
+          "status": "Not Found",
+          "code": 404,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"type\": \"https://api.bank.com/errors/not-found\",\n  \"title\": \"Payment Order Not Found\",\n  \"status\": 404,\n  \"detail\": \"Payment order not found: 00000000-0000-0000-0000-000000000000\",\n  \"instance\": \"/payment-initiation/payment-orders/00000000-0000-0000-0000-000000000000\",\n  \"timestamp\": \"2025-11-19T06:30:00Z\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "3. Retrieve Payment Order Status",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response contains status information', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('paymentOrderProcedure');",
+              "    pm.expect(jsonData.paymentOrderProcedure).to.have.property('paymentOrderProcedureInstanceReference');",
+              "    pm.expect(jsonData.paymentOrderProcedure).to.have.property('paymentOrderProcedureInstanceStatus');",
+              "});",
+              "",
+              "pm.test('Status is valid BIAN status', function () {",
+              "    var jsonData = pm.response.json();",
+              "    var validStatuses = ['Initiated', 'Pending', 'Accepted', 'InProgress', 'Completed', 'Settled', 'Rejected', 'Failed', 'Cancelled'];",
+              "    pm.expect(validStatuses).to.include(jsonData.paymentOrderProcedure.paymentOrderProcedureInstanceStatus);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/payment-initiation/payment-orders/{{paymentOrderId}}/status",
+          "host": ["{{baseUrl}}"],
+          "path": ["payment-initiation", "payment-orders", "{{paymentOrderId}}", "status"]
+        },
+        "description": "Recupera únicamente el estado de una orden de pago.\n\n**Endpoint**: GET /payment-initiation/payment-orders/{id}/status\n**BIAN Operation**: Retrieve Status\n\n**Nota**: Ejecuta primero \"1. Initiate Payment Order\" para obtener un ID válido."
+      },
+      "response": [
+        {
+          "name": "200 OK - Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payment-initiation/payment-orders/550e8400-e29b-41d4-a716-446655440000/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["payment-initiation", "payment-orders", "550e8400-e29b-41d4-a716-446655440000", "status"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"paymentOrderProcedure\": {\n    \"paymentOrderProcedureInstanceReference\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"paymentOrderProcedureInstanceStatus\": \"Completed\"\n  },\n  \"_metadata\": {\n    \"lastUpdateDateTime\": \"2025-11-19T08:45:30Z\"\n  }\n}"
+        },
+        {
+          "name": "404 Not Found",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payment-initiation/payment-orders/00000000-0000-0000-0000-000000000000/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["payment-initiation", "payment-orders", "00000000-0000-0000-0000-000000000000", "status"]
+            }
+          },
+          "status": "Not Found",
+          "code": 404,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"type\": \"https://api.bank.com/errors/not-found\",\n  \"title\": \"Payment Order Not Found\",\n  \"status\": 404,\n  \"detail\": \"Payment order not found: 00000000-0000-0000-0000-000000000000\",\n  \"instance\": \"/payment-initiation/payment-orders/00000000-0000-0000-0000-000000000000\",\n  \"timestamp\": \"2025-11-19T06:30:00Z\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "4. Initiate Payment Order - EUR",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/payment-initiation/payment-orders",
+          "host": ["{{baseUrl}}"],
+          "path": ["payment-initiation", "payment-orders"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"paymentOrderProcedure\": {\n    \"paymentTransactionInitiatorReference\": \"EXT-2025-002\",\n    \"payer\": {\n      \"payerReference\": \"Carlos Rodríguez\",\n      \"payerProductInstanceReference\": \"ES1234567890123456789012\"\n    },\n    \"payee\": {\n      \"payeeReference\": \"Ana Martínez\",\n      \"payeeProductInstanceReference\": \"ES9876543210987654321098\"\n    },\n    \"paymentDetails\": {\n      \"amount\": 500.00,\n      \"currency\": \"EUR\"\n    },\n    \"dateInformation\": {\n      \"dateType\": \"RequestedExecutionDate\",\n      \"date\": \"2025-12-25\"\n    },\n    \"remittanceInformation\": \"Transferencia internacional\"\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "Ejemplo de orden de pago en EUR con campos mínimos requeridos."
+      }
+    },
+    {
+      "name": "5. Initiate Payment Order - Minimal",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/payment-initiation/payment-orders",
+          "host": ["{{baseUrl}}"],
+          "path": ["payment-initiation", "payment-orders"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"paymentOrderProcedure\": {\n    \"paymentTransactionInitiatorReference\": \"EXT-MIN-001\",\n    \"payer\": {\n      \"payerProductInstanceReference\": \"EC1111111111111111111111\"\n    },\n    \"payee\": {\n      \"payeeProductInstanceReference\": \"EC2222222222222222222222\"\n    },\n    \"paymentDetails\": {\n      \"amount\": 10.50,\n      \"currency\": \"USD\"\n    },\n    \"dateInformation\": {\n      \"dateType\": \"RequestedExecutionDate\",\n      \"date\": \"2025-11-20\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "Ejemplo con solo los campos obligatorios (sin campos opcionales)."
+      }
+    }
+  ]
+}

@@ -1,0 +1,353 @@
+{
+  "info": {
+    "name": "Payment Orders API - Docker Compose",
+    "_postman_id": "payment-orders-docker-v1",
+    "description": "Colección para probar la API REST de Payment Orders ejecutándose en Docker Compose.\n\n**Configuración:**\n- Base URL: http://localhost:8080\n- PostgreSQL: localhost:5432\n- PgAdmin: http://localhost:5050\n\n**Prerequisitos:**\n1. Ejecutar: `docker-compose up --build -d`\n2. Verificar: `docker-compose ps`\n3. Ver logs: `docker-compose logs -f payment-orders-app`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "paymentOrderId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Health Check",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Application is UP\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.status).to.eql(\"UP\");",
+              "});",
+              "",
+              "console.log(\"✅ Aplicación corriendo correctamente en Docker\");"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/actuator/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["actuator", "health"]
+        },
+        "description": "Verifica que la aplicación esté corriendo correctamente en Docker."
+      },
+      "response": []
+    },
+    {
+      "name": "1. Initiate Payment Order - USD",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test(\"Response has paymentOrderProcedureInstanceReference\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.paymentOrderProcedureInstanceReference).to.exist;",
+              "    ",
+              "    // Guardar el ID para usar en siguientes requests",
+              "    pm.collectionVariables.set(\"paymentOrderId\", jsonData.paymentOrderProcedureInstanceReference);",
+              "    console.log(\"💾 Payment Order ID guardado: \" + jsonData.paymentOrderProcedureInstanceReference);",
+              "});",
+              "",
+              "pm.test(\"Status is INITIATED\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.paymentOrderProcedure.paymentOrderStatus).to.eql(\"INITIATED\");",
+              "});",
+              "",
+              "pm.test(\"Has self link\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData._links.self.href).to.include(\"/payment-initiation/payment-orders/\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"paymentOrderProcedure\": {\n    \"paymentTransactionInitiatorReference\": \"DOCKER-TEST-001\",\n    \"payer\": {\n      \"payerReference\": \"Juan Pérez\",\n      \"payerBankReference\": \"BANK001\",\n      \"payerProductInstanceReference\": \"EC1234567890123456789012\"\n    },\n    \"payee\": {\n      \"payeeReference\": \"María López\",\n      \"payeeBankReference\": \"BANK002\",\n      \"payeeProductInstanceReference\": \"EC9876543210987654321098\"\n    },\n    \"paymentDetails\": {\n      \"amount\": 250.50,\n      \"currency\": \"USD\",\n      \"paymentMechanismType\": \"CreditTransfer\"\n    },\n    \"dateInformation\": {\n      \"dateType\": \"RequestedExecutionDate\",\n      \"date\": \"2025-12-31\"\n    },\n    \"remittanceInformation\": \"Pago desde Docker Compose - Test 001\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/payment-initiation/payment-orders",
+          "host": ["{{baseUrl}}"],
+          "path": ["payment-initiation", "payment-orders"]
+        },
+        "description": "Crea una nueva orden de pago en USD usando la aplicación en Docker."
+      },
+      "response": []
+    },
+    {
+      "name": "2. Initiate Payment Order - EUR",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test(\"Currency is EUR\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.paymentOrderProcedure.paymentDetails.currency).to.eql(\"EUR\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"paymentOrderProcedure\": {\n    \"paymentTransactionInitiatorReference\": \"DOCKER-TEST-002\",\n    \"payer\": {\n      \"payerReference\": \"Carlos García\",\n      \"payerBankReference\": \"BANK003\",\n      \"payerProductInstanceReference\": \"EC1111222233334444555566\"\n    },\n    \"payee\": {\n      \"payeeReference\": \"Ana Martínez\",\n      \"payeeBankReference\": \"BANK004\",\n      \"payeeProductInstanceReference\": \"EC6666555544443333222211\"\n    },\n    \"paymentDetails\": {\n      \"amount\": 1500.00,\n      \"currency\": \"EUR\",\n      \"paymentMechanismType\": \"InstantPayment\"\n    },\n    \"dateInformation\": {\n      \"dateType\": \"RequestedExecutionDate\",\n      \"date\": \"2025-12-25\"\n    },\n    \"remittanceInformation\": \"Transferencia internacional EUR - Docker Test\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/payment-initiation/payment-orders",
+          "host": ["{{baseUrl}}"],
+          "path": ["payment-initiation", "payment-orders"]
+        },
+        "description": "Crea una orden de pago en EUR con InstantPayment."
+      },
+      "response": []
+    },
+    {
+      "name": "3. Retrieve Payment Order",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response has complete payment order data\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.paymentOrderProcedure).to.exist;",
+              "    pm.expect(jsonData.paymentOrderProcedure.payer).to.exist;",
+              "    pm.expect(jsonData.paymentOrderProcedure.payee).to.exist;",
+              "    pm.expect(jsonData.paymentOrderProcedure.paymentDetails).to.exist;",
+              "});",
+              "",
+              "pm.test(\"Has metadata\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData._metadata).to.exist;",
+              "    pm.expect(jsonData._metadata.createdDateTime).to.exist;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// Verificar que tenemos un ID guardado",
+              "var paymentOrderId = pm.collectionVariables.get(\"paymentOrderId\");",
+              "if (!paymentOrderId) {",
+              "    console.log(\"⚠️ No hay paymentOrderId guardado. Ejecuta primero 'Initiate Payment Order'.\");",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/payment-initiation/payment-orders/{{paymentOrderId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["payment-initiation", "payment-orders", "{{paymentOrderId}}"]
+        },
+        "description": "Recupera los detalles completos de una orden de pago usando el ID guardado."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Retrieve Payment Order Status",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response has status information\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.paymentOrderProcedure).to.exist;",
+              "    pm.expect(jsonData.paymentOrderProcedure.paymentOrderStatus).to.exist;",
+              "});",
+              "",
+              "pm.test(\"Status is valid\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    var validStatuses = [\"INITIATED\", \"PENDING\", \"PROCESSING\", \"COMPLETED\", \"FAILED\", \"CANCELLED\"];",
+              "    pm.expect(validStatuses).to.include(jsonData.paymentOrderProcedure.paymentOrderStatus);",
+              "    console.log(\"📊 Estado actual: \" + jsonData.paymentOrderProcedure.paymentOrderStatus);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/payment-initiation/payment-orders/{{paymentOrderId}}/status",
+          "host": ["{{baseUrl}}"],
+          "path": ["payment-initiation", "payment-orders", "{{paymentOrderId}}", "status"]
+        },
+        "description": "Consulta únicamente el estado de una orden de pago."
+      },
+      "response": []
+    },
+    {
+      "name": "5. Retrieve Non-Existent Order (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 404\", function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "pm.test(\"Error response follows RFC 7807\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.type).to.exist;",
+              "    pm.expect(jsonData.title).to.exist;",
+              "    pm.expect(jsonData.status).to.eql(404);",
+              "    pm.expect(jsonData.detail).to.exist;",
+              "});",
+              "",
+              "console.log(\"✅ Manejo de errores funcionando correctamente\");"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/payment-initiation/payment-orders/00000000-0000-0000-0000-000000000000",
+          "host": ["{{baseUrl}}"],
+          "path": ["payment-initiation", "payment-orders", "00000000-0000-0000-0000-000000000000"]
+        },
+        "description": "Prueba el manejo de errores cuando se busca una orden que no existe."
+      },
+      "response": []
+    },
+    {
+      "name": "6. Invalid Request - Missing Required Fields",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Error response has validation details\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.type).to.exist;",
+              "    pm.expect(jsonData.status).to.eql(400);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"paymentOrderProcedure\": {\n    \"paymentTransactionInitiatorReference\": \"INVALID-TEST\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/payment-initiation/payment-orders",
+          "host": ["{{baseUrl}}"],
+          "path": ["payment-initiation", "payment-orders"]
+        },
+        "description": "Prueba la validación de campos requeridos."
+      },
+      "response": []
+    },
+    {
+      "name": "7. Get Swagger UI",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/swagger-ui.html",
+          "host": ["{{baseUrl}}"],
+          "path": ["swagger-ui.html"]
+        },
+        "description": "Abre la interfaz Swagger UI para explorar la API interactivamente."
+      },
+      "response": []
+    },
+    {
+      "name": "8. Get OpenAPI Specification",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api-docs",
+          "host": ["{{baseUrl}}"],
+          "path": ["api-docs"]
+        },
+        "description": "Obtiene la especificación OpenAPI completa en formato JSON."
+      },
+      "response": []
+    }
+  ]
+}

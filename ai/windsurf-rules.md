@@ -10,23 +10,34 @@ Migración de servicios de pago SOAP legados a API REST alineada con BIAN (Banki
 ## Reglas de Documentación (OBLIGATORIO)
 
 ### Convención de Archivos de Documentación
-- **Ubicación**: Todos los documentos deben generarse en la carpeta `doc/`
+- **Ubicación**: Todos los documentos deben generarse en la carpeta `ai/`
 - **Formato**: Usar formato Markdown (extensión `.md`)
 - **Idioma**: Todos los documentos deben estar en **español**
 - **Nomenclatura**: Usar **snake_case** para nombres de archivos
   - ✅ Correcto: `analisis_migracion.md`, `decisiones_arquitectura.md`, `guia_instalacion.md`
   - ❌ Incorrecto: `AnalisisMigracion.md`, `decisiones-arquitectura.md`, `Guía Instalación.md`
 
-### Estructura de Carpeta `doc/`
+### Estructura de Carpeta `ai/`
 ```
-doc/
-├── instrucciones.md              # Instrucciones del ejercicio (proporcionado)
+ai/
 ├── analisis_migracion.md         # Análisis WSDL y mapeo a REST
 ├── decisiones_arquitectura.md    # Decisiones de diseño
 ├── guia_instalacion.md           # Pasos de instalación y ejecución
+├── prompts.md                    # Prompts utilizados con IA
+├── decisiones.md                 # Decisiones tomadas con ayuda de IA
+└── generations/                  # Carpeta para código generado por IA
+    ├── openapi_v1.yaml
+    ├── domain_models.java
+    └── test_examples.java
+```
+
+### Estructura de Carpeta `doc/` (Archivos Proporcionados)
+```
+doc/
+├── instrucciones.md              # Instrucciones del ejercicio (proporcionado)
 ├── PaymentOrderService.wsdl      # WSDL original (proporcionado)
 ├── postman_collection.json       # Colección Postman (proporcionado)
-└── ejemplos/                     # Carpeta para ejemplos XML/JSON
+└── ejemplos/                     # Carpeta para ejemplos XML/JSON (proporcionado)
     ├── SubmitPaymentOrderRequest.xml
     ├── SubmitPaymentOrderResponse.xml
     ├── GetPaymentOrderStatusRequest.xml
@@ -35,7 +46,7 @@ doc/
 
 ### Reglas de Calidad de Documentación (OBLIGATORIO)
 
-**Al actualizar cualquier documento en `doc/`, SIEMPRE verificar**:
+**Al actualizar cualquier documento en `ai/`, SIEMPRE verificar**:
 
 #### 1. Tabla de Contenidos
 - ✅ Debe existir al inicio del documento (después del título principal)
