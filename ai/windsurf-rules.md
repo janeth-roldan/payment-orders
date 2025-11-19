@@ -568,6 +568,103 @@ Antes de entregar, verificar:
 
 ---
 
+## Convenciones de Código Java (OBLIGATORIO)
+
+### Nomenclatura de Métodos
+- **SIEMPRE usar lowerCamelCase** para nombres de métodos
+- Los nombres de métodos deben ser **descriptivos y verbosos**
+- Usar verbos que indiquen la acción: `get`, `set`, `create`, `update`, `delete`, `find`, `validate`, `process`, `calculate`
+- Para métodos booleanos usar prefijos: `is`, `has`, `can`, `should`
+
+#### Ejemplos Correctos:
+```java
+// ✅ Correcto
+public void initiatePaymentOrder() { }
+public PaymentOrder findPaymentOrderById(UUID id) { }
+public boolean isPaymentOrderValid() { }
+public void validatePaymentDetails() { }
+public Mono<PaymentOrder> retrievePaymentOrderStatus(UUID id) { }
+```
+
+#### Ejemplos Incorrectos:
+```java
+// ❌ Incorrecto
+public void InitiatePaymentOrder() { }  // PascalCase
+public void initiate_payment_order() { }  // snake_case
+public void init() { }  // No descriptivo
+public void process() { }  // Muy genérico
+```
+
+### Nomenclatura de Tests
+- Los métodos de test deben ser **extremadamente descriptivos**
+- Usar formato: `should[ExpectedBehavior]When[StateUnderTest]`
+- O formato: `given[Precondition]When[Action]Then[ExpectedResult]`
+- **NO usar guiones bajos** en nombres de métodos de test
+
+#### Ejemplos de Tests Correctos:
+```java
+// ✅ Correcto - Formato should/when
+@Test
+void shouldCreatePaymentOrderWhenValidDataProvided() { }
+
+@Test
+void shouldThrowExceptionWhenPaymentOrderNotFound() { }
+
+@Test
+void shouldReturnInitiatedStatusWhenPaymentOrderCreated() { }
+
+// ✅ Correcto - Formato given/when/then
+@Test
+void givenValidRequestWhenInitiatingPaymentOrderThenReturnCreatedStatus() { }
+
+@Test
+void givenNonExistentIdWhenRetrievingPaymentOrderThenThrowNotFoundException() { }
+```
+
+#### Ejemplos de Tests Incorrectos:
+```java
+// ❌ Incorrecto
+@Test
+void test_initiate_payment_order() { }  // snake_case
+
+@Test
+void testInitiate() { }  // No descriptivo
+
+@Test
+void test1() { }  // Nombre sin significado
+```
+
+### Nomenclatura de Clases
+- **PascalCase** para nombres de clases
+- Sufijos según tipo:
+  - `Service` para servicios de aplicación
+  - `Controller` para controladores REST
+  - `Repository` para repositorios
+  - `Adapter` para adaptadores
+  - `Mapper` para mappers
+  - `Exception` para excepciones personalizadas
+  - `Test` para tests unitarios
+  - `IntegrationTest` para tests de integración
+
+### Nomenclatura de Variables
+- **lowerCamelCase** para variables locales y parámetros
+- **UPPER_SNAKE_CASE** para constantes
+- Nombres descriptivos, evitar abreviaturas
+
+```java
+// ✅ Correcto
+private static final int MAX_RETRY_ATTEMPTS = 3;
+private PaymentOrderService paymentOrderService;
+String paymentOrderId;
+
+// ❌ Incorrecto
+private static final int max_retry = 3;  // snake_case
+private PaymentOrderService pos;  // Abreviatura
+String id;  // Muy genérico
+```
+
+---
+
 ## Resumen de Entregables
 
 1. **Repositorio**: Repositorio Git con historial de commits limpio

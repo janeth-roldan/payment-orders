@@ -24,7 +24,14 @@ public class PaymentOrderPersistenceMapper {
   public PaymentOrderEntity toEntity(PaymentOrderProcedure domain) {
     return toEntity(domain, true);
   }
-  
+
+  /**
+   * Convierte PaymentOrderProcedure de dominio a PaymentOrderEntity.
+   *
+   * @param domain entidad de dominio
+   * @param isNew indica si es una nueva entidad (INSERT) o existente (UPDATE)
+   * @return entidad de persistencia
+   */
   public PaymentOrderEntity toEntity(PaymentOrderProcedure domain, boolean isNew) {
     PaymentOrderEntity entity = new PaymentOrderEntity();
 
@@ -102,7 +109,8 @@ public class PaymentOrderPersistenceMapper {
 
     // Usar reflexión para setear el ID de la base de datos
     try {
-      var idField = PaymentOrderProcedure.class.getDeclaredField("paymentOrderProcedureInstanceReference");
+      var idField = PaymentOrderProcedure.class
+          .getDeclaredField("paymentOrderProcedureInstanceReference");
       idField.setAccessible(true);
       idField.set(procedure, entity.getId());
       
