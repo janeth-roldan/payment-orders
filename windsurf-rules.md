@@ -159,6 +159,98 @@ Mapear estados SOAP a estados alineados con BIAN:
 - SOAP `SETTLED` → REST `COMPLETED` o `SETTLED`
 - Considerar: PENDING, REJECTED, FAILED, CANCELLED
 
+### Estructura de Entidades BIAN (OBLIGATORIO)
+
+**El OpenAPI DEBE usar nomenclatura BIAN con entidades anidadas que representen el modelo BIAN 12.0**
+
+#### Entidades BIAN Requeridas
+
+1. **PaymentOrderProcedure** (Control Record Principal)
+   - Contiene todos los datos de la orden de pago
+   - Incluye entidades anidadas: Payer, Payee, PaymentDetails, DateInformation
+
+2. **Payer** (Entidad para información del pagador/deudor)
+   - `payerReference` - Nombre o referencia del pagador
+   - `payerBankReference` - Referencia del banco del pagador
+   - `payerProductInstanceReference` - IBAN o número de cuenta
+
+3. **Payee** (Entidad para información del beneficiario/acreedor)
+   - `payeeReference` - Nombre o referencia del beneficiario
+   - `payeeBankReference` - Referencia del banco del beneficiario
+   - `payeeProductInstanceReference` - IBAN o número de cuenta
+
+4. **PaymentDetails** (Entidad para detalles del pago)
+   - `amount` - Monto de la transacción
+   - `currency` - Código de moneda ISO 4217
+   - `paymentMechanismType` - Tipo de mecanismo de pago
+
+5. **DateInformation** (Entidad para información de fechas)
+   - `dateType` - Tipo de fecha (ej: "RequestedExecutionDate")
+   - `date` - Valor de la fecha en formato ISO 8601
+
+#### Estructura JSON Requerida (Request)
+
+```json
+{
+  "paymentOrderProcedure": {
+    "paymentTransactionInitiatorReference": "string",
+    "payer": {
+      "payerReference": "string",
+      "payerBankReference": "string",
+      "payerProductInstanceReference": "string"
+    },
+    "payee": {
+      "payeeReference": "string",
+      "payeeBankReference": "string",
+      "payeeProductInstanceReference": "string"
+    },
+    "paymentDetails": {
+      "amount": 0.00,
+      "currency": "string",
+      "paymentMechanismType": "string"
+    },
+    "dateInformation": {
+      "dateType": "RequestedExecutionDate",
+      "date": "2025-10-31"
+    },
+    "remittanceInformation": "string"
+  }
+}
+```
+
+#### Estructura JSON Requerida (Response)
+
+```json
+{
+  "paymentOrderProcedure": {
+    "paymentOrderProcedureInstanceReference": "uuid",
+    "paymentOrderProcedureInstanceStatus": "Initiated"
+  },
+  "_metadata": {
+    "createdDateTime": "2025-10-30T14:30:00Z"
+  },
+  "_links": {
+    "self": {
+      "href": "/payment-initiation/payment-orders/{id}"
+    }
+  }
+}
+```
+
+#### Mapeo SOAP → BIAN con Entidades
+
+| Campo SOAP | Entidad BIAN | Campo BIAN | Ruta Completa OpenAPI |
+|------------|--------------|------------|----------------------|
+| externalId | PaymentOrderProcedure | paymentTransactionInitiatorReference | paymentOrderProcedure.paymentTransactionInitiatorReference |
+| debtorIban | Payer | payerProductInstanceReference | paymentOrderProcedure.payer.payerProductInstanceReference |
+| - | Payer | payerReference | paymentOrderProcedure.payer.payerReference |
+| creditorIban | Payee | payeeProductInstanceReference | paymentOrderProcedure.payee.payeeProductInstanceReference |
+| - | Payee | payeeReference | paymentOrderProcedure.payee.payeeReference |
+| amount | PaymentDetails | amount | paymentOrderProcedure.paymentDetails.amount |
+| currency | PaymentDetails | currency | paymentOrderProcedure.paymentDetails.currency |
+| remittanceInfo | PaymentOrderProcedure | remittanceInformation | paymentOrderProcedure.remittanceInformation |
+| requestedExecutionDate | DateInformation | date | paymentOrderProcedure.dateInformation.date |
+
 ---
 
 ## Reglas de Arquitectura (Hexagonal)
