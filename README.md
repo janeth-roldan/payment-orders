@@ -59,7 +59,7 @@ Migración de un servicio SOAP legado de órdenes de pago hacia una API REST mod
 - ✅ Estados identificados: `ACCEPTED`, `SETTLED`, `REJECTED`, `PENDING`
 - ✅ Validaciones y reglas de negocio extraídas
 
-**Resultado**: Documento `doc/ANALISIS_MIGRACION.md` con mapeo completo SOAP → BIAN
+**Resultado**: Documento [`doc/ANALISIS_MIGRACION.md`](doc/ANALISIS_MIGRACION.md) con mapeo completo SOAP → BIAN
 
 ### Etapa 2: Diseño del Contrato REST
 **Enfoque**: Contract-First con OpenAPI 3.0
@@ -71,7 +71,7 @@ Migración de un servicio SOAP legado de órdenes de pago hacia una API REST mod
 - ✅ Endpoints RESTful: POST, GET (orden completa), GET (status)
 - ✅ Validaciones OpenAPI: `pattern`, `minLength`, `required`, `format`
 
-**Resultado**: `src/main/resources/api/openapi.yaml` (contrato completo)
+**Resultado**: [`src/main/resources/api/openapi.yaml`](src/main/resources/api/openapi.yaml) (contrato completo)
 
 ### Etapa 3: Implementación con Arquitectura Hexagonal
 **Capas implementadas**:
@@ -104,7 +104,7 @@ Adapters (Infraestructura)
 - ✅ Campos RFC 7807: `type`, `title`, `status`, `detail`, `instance`, `timestamp`
 - ✅ Excepciones personalizadas: `PaymentOrderNotFoundException`, `InvalidPaymentOrderException`
 
-**Resultado**: Documento `ai/verificacion_manejo_errores.md`
+**Resultado**: Documento [`ai/verificacion_manejo_errores.md`](ai/verificacion_manejo_errores.md)
 
 ### Etapa 5: Testing y Calidad
 **Cobertura de tests**:
@@ -224,7 +224,7 @@ void shouldMapInitiateRequestToPaymentOrder() {
 
 **Correcciones manuales**:
 - ✅ Ajuste de tests de integración con Testcontainers
-- ✅ Creación de `schema.sql` para tests
+- ✅ Creación de [`schema.sql`](src/test/resources/schema.sql) para tests
 - ✅ Configuración de exclusiones JaCoCo para código generado
 
 #### 5️⃣ Configuración de Docker
@@ -238,8 +238,8 @@ Optimiza para desarrollo y producción.
 ```
 
 **Fragmentos generados**:
-- ✅ Dockerfile con build Maven + runtime JRE
-- ✅ docker-compose.yml con healthchecks
+- ✅ [`Dockerfile`](Dockerfile) con build Maven + runtime JRE
+- ✅ [`docker-compose.yml`](docker-compose.yml) con healthchecks
 
 **Correcciones manuales**:
 - ✅ Ajuste de variables de entorno
@@ -576,17 +576,17 @@ Este proyecto sigue:
 
 ## 📚 Documentación Técnica
 
-El proyecto incluye documentación técnica completa en la carpeta `ai/`:
+El proyecto incluye documentación técnica completa en:
 
-| Documento | Descripción | Ubicación |
-|-----------|-------------|-----------|
-| **📋 Instrucciones** | Requerimientos y entregables del proyecto | [`ai/instrucciones.md`](ai/instrucciones.md) |
-| **🔄 Análisis de Migración** | Mapeo completo SOAP → REST BIAN 12.0 | [`doc/ANALISIS_MIGRACION.md`](doc/ANALISIS_MIGRACION.md) |
-| **✅ Verificación de Errores** | Implementación RFC 7807 con ProblemDetail | [`ai/verificacion_manejo_errores.md`](ai/verificacion_manejo_errores.md) |
-| **📐 Reglas de Desarrollo** | Guía completa de arquitectura y estándares | [`ai/windsurf-rules.md`](ai/windsurf-rules.md) |
-| **🔌 Colección Postman** | Tests E2E para Docker Compose | [`ai/payment-orders-api.postman_collection.json`](ai/payment-orders-api.postman_collection.json) |
-| **📄 WSDL Legado** | Servicio SOAP original | [`ai/PaymentOrderService.wsdl`](ai/PaymentOrderService.wsdl) |
-| **📊 Contrato OpenAPI** | Especificación REST completa | [`src/main/resources/api/openapi.yaml`](src/main/resources/api/openapi.yaml) |
+| Documento | Descripción                                         | Ubicación |
+|-----------|-----------------------------------------------------|-----------|
+| **📋 Instrucciones** | Requerimientos y entregables del proyecto           | [`ai/instrucciones.md`](ai/instrucciones.md) |
+| **🔄 Análisis de Migración** | Mapeo completo SOAP → REST BIAN 12.0                | [`doc/ANALISIS_MIGRACION.md`](doc/ANALISIS_MIGRACION.md) |
+| **✅ Verificación de Errores** | Implementación RFC 7807 con ProblemDetail           | [`ai/verificacion_manejo_errores.md`](ai/verificacion_manejo_errores.md) |
+| **📐 Reglas de Desarrollo** | Guía completa de arquitectura y estándares          | [`ai/windsurf-rules.md`](ai/windsurf-rules.md) |
+| **🔌 Colección Postman** | Tests para la api                                   | [`ai/payment-orders-api.postman_collection.json`](ai/payment-orders-api.postman_collection.json) |
+| **📄 WSDL Legado** | Servicio SOAP original                              | [`ai/PaymentOrderService.wsdl`](ai/PaymentOrderService.wsdl) |
+| **📊 Contrato OpenAPI** | Especificación REST completa                        | [`src/main/resources/api/openapi.yaml`](src/main/resources/api/openapi.yaml) |
 | **🚀 Guía de Inicio Rápido** | Instrucciones paso a paso para ejecutar el proyecto | [`doc/QUICK_START.md`](doc/QUICK_START.md) |
 
 ### Contenido de Documentos Clave
@@ -690,10 +690,10 @@ Para preguntas sobre el proyecto:
 |---|------------|--------|--------------|
 | **1** | URL del Repositorio | ✅ | Git inicializado, commits descriptivos |
 | **2** | README Completo | ✅ | 938 líneas con toda la documentación |
-| **3** | OpenAPI YML | ✅ | `src/main/resources/api/openapi.yaml` |
+| **3** | OpenAPI YML | ✅ | [`src/main/resources/api/openapi.yaml`](src/main/resources/api/openapi.yaml) |
 | **4** | Tests ≥80% Cobertura | ✅ | 42 tests, JaCoCo ≥80% |
 | **5** | Calidad (mvn verify) | ✅ | Checkstyle + SpotBugs sin errores |
-| **6** | Docker | ✅ | Dockerfile + docker-compose.yml |
+| **6** | Docker | ✅ | [`Dockerfile`](Dockerfile) + [`docker-compose.yml`](docker-compose.yml) |
 | **7** | Evidencia de IA | ✅ | Carpeta `ai/` + sección en README |
 
 ---
@@ -732,7 +732,7 @@ Para preguntas sobre el proyecto:
 
 #### ✅ 3. OpenAPI 3.0 - Contrato REST
 
-**Archivo**: `src/main/resources/api/openapi.yaml`
+**Archivo**: [`src/main/resources/api/openapi.yaml`](src/main/resources/api/openapi.yaml)
 
 - [x] Alineado con BIAN Payment Initiation SD 12.0
 - [x] **3 Endpoints documentados**:
@@ -773,13 +773,13 @@ Para preguntas sobre el proyecto:
 
 **Checkstyle**:
 - [x] Google Java Style Guide
-- [x] Configurado en `pom.xml`
-- [x] Suppressions: `checkstyle-suppressions.xml`
+- [x] Configurado en [`pom.xml`](pom.xml)
+- [x] Suppressions: [`checkstyle-suppressions.xml`](checkstyle-suppressions.xml)
 - [x] **0 violaciones**
 
 **SpotBugs**:
 - [x] Análisis estático configurado
-- [x] Exclusiones: `spotbugs-exclude.xml`
+- [x] Exclusiones: [`spotbugs-exclude.xml`](spotbugs-exclude.xml)
 - [x] **0 bugs encontrados**
 
 **Verificación**:
@@ -796,12 +796,12 @@ mvn verify
 
 #### ✅ 6. Docker
 
-**Dockerfile**:
+**[`Dockerfile`](Dockerfile)**:
 - [x] Multi-stage build (Maven + JRE 17)
 - [x] Optimizado para producción
 - [x] Health check configurado
 
-**docker-compose.yml**:
+**[`docker-compose.yml`](docker-compose.yml)**:
 - [x] PostgreSQL 15 Alpine
 - [x] Spring Boot App (puerto 8080)
 - [x] PgAdmin 4 (puerto 5050, opcional)
@@ -817,12 +817,12 @@ docker-compose logs -f payment-orders-app
 #### ✅ 7. Evidencia de IA
 
 **Carpeta `ai/` con 10 archivos**:
-- [x] `instrucciones.md` - Requerimientos del proyecto
-- [x] `ANALISIS_MIGRACION.md` - Mapeo SOAP → BIAN (444 líneas)
-- [x] `verificacion_manejo_errores.md` - RFC 7807 (401 líneas)
-- [x] `windsurf-rules.md` - Reglas de desarrollo (1146 líneas)
-- [x] `payment-orders-api.postman_collection.json` - Tests E2E
-- [x] `PaymentOrderService.wsdl` - WSDL legado
+- [x] [`instrucciones.md`](ai/instrucciones.md) - Requerimientos del proyecto
+- [x] [`ANALISIS_MIGRACION.md`](doc/ANALISIS_MIGRACION.md) - Mapeo SOAP → BIAN (444 líneas)
+- [x] [`verificacion_manejo_errores.md`](ai/verificacion_manejo_errores.md) - RFC 7807 (401 líneas)
+- [x] [`windsurf-rules.md`](ai/windsurf-rules.md) - Reglas de desarrollo (1146 líneas)
+- [x] [`payment-orders-api.postman_collection.json`](ai/payment-orders-api.postman_collection.json) - Tests E2E
+- [x] [`PaymentOrderService.wsdl`](ai/PaymentOrderService.wsdl) - WSDL legado
 - [x] Ejemplos XML SOAP (Request/Response)
 
 **Documentación en README**:
