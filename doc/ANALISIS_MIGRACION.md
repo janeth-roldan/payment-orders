@@ -414,22 +414,9 @@ com.bank.paymentorders/
 
 **Service Domain - Payment Initiation**:
 - **BOM Diagram Payment Order**: https://bian.org/servicelandscape-12-0-0/views/view_28713.html
-- **Service Landscape**: https://bian.org/servicelandscape-12-0-0/payment-initiation/
-- **Semantic API**: https://bian.org/semantic-apis/payment-initiation/
-
-**Estándares y Patrones**:
-- **BIAN Architecture Framework**: https://bian.org/deliverables/bian-architecture-framework/
-- **Control Record Patterns**: https://bian.org/deliverables/bian-standards/control-record-patterns/
-- **Service Domain Patterns**: https://bian.org/deliverables/bian-standards/service-domain-patterns/
-- **BIAN Data Dictionary**: https://bian.org/deliverables/bian-standards/data-dictionary/
-
-**ISO 20022**:
-- **Payment Messages**: https://www.iso20022.org/payments_messages.page
-- **Credit Transfer**: https://www.iso20022.org/iso-20022-message-definitions?business-domain=1
+- **Service Domain Overview**: https://bian.org/servicelandscape-12-0-0/views/view_51891.html
 
 **Recursos Adicionales**:
-- **BIAN Metamodel**: https://bian.org/deliverables/bian-metamodel/
-- **BIAN Glossary**: https://bian.org/deliverables/bian-glossary/
 - **OpenAPI 3.0 Spec**: https://swagger.io/specification/
 - **Hexagonal Architecture**: https://alistair.cockburn.us/hexagonal-architecture/
 - **Spring Boot 3 Docs**: https://docs.spring.io/spring-boot/docs/current/reference/html/
