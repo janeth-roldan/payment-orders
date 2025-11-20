@@ -43,11 +43,14 @@ curl http://localhost:8080/actuator/health
 
 ## 🧪 Probar con Postman
 
-1. **Importar colección**: `ai/postman_collection_bian.json`
-2. **Ejecutar requests**:
-   - `1. Initiate Payment Order` → Crea una orden
-   - `2. Retrieve Payment Order` → Consulta la orden
-   - `3. Retrieve Payment Order Status` → Consulta el estado
+1. **Importar colección**: `ai/payment-orders-api.postman_collection.json`
+2. **Ejecutar requests en orden**:
+   - `0. Health Check` → Verifica que la app esté corriendo
+   - `1. Initiate Payment Order - USD` → Crea una orden (guarda ID automáticamente)
+   - `3. Retrieve Payment Order` → Consulta la orden completa
+   - `4. Retrieve Payment Order Status` → Consulta solo el estado
+   - `5. Retrieve Non-Existent Order (404)` → Prueba manejo de errores
+   - `6. Invalid Payment Order (400)` → Prueba validaciones
 
 ---
 
@@ -125,11 +128,17 @@ docker-compose up --build -d
 
 ### Reconstruir desde cero
 ```bash
-# Limpiar todo
+# Paso 1: Detener y limpiar contenedores
 docker-compose down -v
-docker system prune -a
+```
 
-# Volver a construir
+```bash
+# Paso 2: Limpiar imágenes y caché (requiere confirmación Y/N)
+docker system prune -a
+```
+
+```bash
+# Paso 3: Volver a construir
 docker-compose up --build -d
 ```
 
@@ -137,6 +146,7 @@ docker-compose up --build -d
 
 ## 📖 Más Información
 
-- **README completo**: [README.md](README.md)
-- **Documentación BIAN**: [ai/analisis_migracion.md](ai/analisis_migracion.md)
-- **Colección Postman**: [ai/postman_collection_bian.json](ai/postman_collection_bian.json)
+- **README completo**: [README.md](../README.md)
+- **Documentación BIAN**: [ANALISIS_MIGRACION.md](ANALISIS_MIGRACION.md)
+- **Colección Postman**: [../ai/payment-orders-api.postman_collection.json](../ai/payment-orders-api.postman_collection.json)
+- **Reglas de Desarrollo**: [../ai/windsurf-rules.md](../ai/windsurf-rules.md)

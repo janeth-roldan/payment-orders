@@ -59,7 +59,7 @@ Migración de un servicio SOAP legado de órdenes de pago hacia una API REST mod
 - ✅ Estados identificados: `ACCEPTED`, `SETTLED`, `REJECTED`, `PENDING`
 - ✅ Validaciones y reglas de negocio extraídas
 
-**Resultado**: Documento `ai/analisis_migracion.md` con mapeo completo SOAP → BIAN
+**Resultado**: Documento `doc/ANALISIS_MIGRACION.md` con mapeo completo SOAP → BIAN
 
 ### Etapa 2: Diseño del Contrato REST
 **Enfoque**: Contract-First con OpenAPI 3.0
@@ -141,7 +141,7 @@ identificando operaciones, campos y estados.
 - Identificó 2 operaciones SOAP principales
 - Propuso mapeo de campos SOAP → BIAN
 - Sugirió estructura de entidades anidadas según BIAN
-- Generó documento `analisis_migracion.md` completo
+- Generó documento `ANALISIS_MIGRACION.md` completo
 
 **Correcciones manuales**:
 - ✅ Ajuste de nomenclatura BIAN (PaymentOrderProcedure vs PaymentOrder)
@@ -240,7 +240,6 @@ Optimiza para desarrollo y producción.
 **Fragmentos generados**:
 - ✅ Dockerfile con build Maven + runtime JRE
 - ✅ docker-compose.yml con healthchecks
-- ✅ Scripts de inicio (start.bat)
 
 **Correcciones manuales**:
 - ✅ Ajuste de variables de entorno
@@ -292,6 +291,8 @@ Optimiza para desarrollo y producción.
 
 ## 🚀 Inicio Rápido
 
+> 📝 **Guía completa**: Ver [`doc/QUICK_START.md`](doc/QUICK_START.md) para instrucciones detalladas paso a paso
+
 ### Opción 1: Todo con Docker Compose (Recomendado)
 
 ```bash
@@ -317,16 +318,6 @@ docker-compose up -d postgres
 mvn spring-boot:run
 ```
 
-### Opción 3: Script de Inicio Rápido (Windows)
-
-```bash
-# Ejecutar start.bat y elegir opción
-start.bat
-
-# Opción 1: Docker Compose completo
-# Opción 2: Solo PostgreSQL + Maven
-```
-
 ### Verificar Instalación
 
 ```bash
@@ -343,7 +334,7 @@ Una vez que la aplicación esté corriendo:
 
 - **Swagger UI**: http://localhost:8080/swagger-ui.html
 - **OpenAPI JSON**: http://localhost:8080/api-docs
-- **Colección Postman**: `ai/postman_collection_bian.json`
+- **Colección Postman**: `ai/payment-orders-api.postman_collection.json`
 
 ## 🔌 Endpoints Disponibles
 
@@ -391,11 +382,38 @@ GET /payment-initiation/payment-orders/{id}/status
 
 ## 🧪 Pruebas con Postman
 
-1. Importar la colección: `ai/postman_collection_bian.json`
-2. Ejecutar los requests en orden:
-   - **1. Initiate Payment Order** (guarda el ID automáticamente)
-   - **2. Retrieve Payment Order** (usa el ID guardado)
-   - **3. Retrieve Payment Order Status** (usa el ID guardado)
+### Colección para Docker Compose
+
+**Archivo**: `ai/payment-orders-api.postman_collection.json`
+
+**Descripción**: Colección completa para probar la API ejecutándose en Docker Compose.
+
+**Configuración**:
+- Base URL: `http://localhost:8080`
+- PostgreSQL: `localhost:5433`
+- PgAdmin: `http://localhost:5050`
+
+**Prerequisitos**:
+1. Ejecutar: `docker-compose up --build -d`
+2. Verificar: `docker-compose ps`
+3. Ver logs: `docker-compose logs -f payment-orders-app`
+
+**Requests incluidos**:
+1. **0. Health Check** - Verifica que la aplicación esté corriendo
+2. **1. Initiate Payment Order - USD** - Crea orden de pago (guarda ID automáticamente)
+3. **3. Retrieve Payment Order** - Recupera orden completa
+4. **4. Retrieve Payment Order Status** - Consulta solo el estado
+5. **5. Retrieve Non-Existent Order (404)** - Prueba manejo de errores
+6. **6. Invalid Payment Order (400)** - Prueba validaciones
+
+**Uso**:
+```bash
+# 1. Importar en Postman
+# File → Import → ai/payment-orders-api.postman_collection.json
+
+# 2. Ejecutar en orden
+# Los IDs se guardan automáticamente en variables de colección
+```
 
 ## 🗄️ Base de Datos
 
@@ -524,10 +542,9 @@ payment-orders/
 │   └── resources/schema.sql       # Schema para Testcontainers
 ├── ai/                            # Documentación técnica
 │   ├── instrucciones.md           # Requerimientos del proyecto
-│   ├── analisis_migracion.md      # Mapeo SOAP → BIAN
 │   ├── verificacion_manejo_errores.md # RFC 7807
 │   ├── windsurf-rules.md          # Reglas de desarrollo
-│   └── postman_collection_bian.json # Tests E2E
+│   └── payment-orders-api.postman_collection.json # Tests E2E
 ├── docker-compose.yml             # PostgreSQL 15 + App + PgAdmin
 ├── Dockerfile                     # Multi-stage build
 ├── pom.xml                        # Maven + plugins (JaCoCo, Checkstyle, SpotBugs)
@@ -564,12 +581,13 @@ El proyecto incluye documentación técnica completa en la carpeta `ai/`:
 | Documento | Descripción | Ubicación |
 |-----------|-------------|-----------|
 | **📋 Instrucciones** | Requerimientos y entregables del proyecto | [`ai/instrucciones.md`](ai/instrucciones.md) |
-| **🔄 Análisis de Migración** | Mapeo completo SOAP → REST BIAN 12.0 | [`ai/analisis_migracion.md`](ai/analisis_migracion.md) |
+| **🔄 Análisis de Migración** | Mapeo completo SOAP → REST BIAN 12.0 | [`doc/ANALISIS_MIGRACION.md`](doc/ANALISIS_MIGRACION.md) |
 | **✅ Verificación de Errores** | Implementación RFC 7807 con ProblemDetail | [`ai/verificacion_manejo_errores.md`](ai/verificacion_manejo_errores.md) |
 | **📐 Reglas de Desarrollo** | Guía completa de arquitectura y estándares | [`ai/windsurf-rules.md`](ai/windsurf-rules.md) |
-| **🔌 Colección Postman** | Tests E2E de la API REST | [`ai/postman_collection_bian.json`](ai/postman_collection_bian.json) |
+| **🔌 Colección Postman** | Tests E2E para Docker Compose | [`ai/payment-orders-api.postman_collection.json`](ai/payment-orders-api.postman_collection.json) |
 | **📄 WSDL Legado** | Servicio SOAP original | [`ai/PaymentOrderService.wsdl`](ai/PaymentOrderService.wsdl) |
 | **📊 Contrato OpenAPI** | Especificación REST completa | [`src/main/resources/api/openapi.yaml`](src/main/resources/api/openapi.yaml) |
+| **🚀 Guía de Inicio Rápido** | Instrucciones paso a paso para ejecutar el proyecto | [`doc/QUICK_START.md`](doc/QUICK_START.md) |
 
 ### Contenido de Documentos Clave
 
@@ -703,7 +721,6 @@ Para preguntas sobre el proyecto:
 **Pasos para Ejecución**:
 - [x] Opción 1: Docker Compose completo
 - [x] Opción 2: PostgreSQL Docker + Maven local
-- [x] Opción 3: Script Windows (start.bat)
 - [x] Comandos de verificación y health checks
 
 **Uso de IA**:
@@ -801,10 +818,10 @@ docker-compose logs -f payment-orders-app
 
 **Carpeta `ai/` con 10 archivos**:
 - [x] `instrucciones.md` - Requerimientos del proyecto
-- [x] `analisis_migracion.md` - Mapeo SOAP → BIAN (444 líneas)
+- [x] `ANALISIS_MIGRACION.md` - Mapeo SOAP → BIAN (444 líneas)
 - [x] `verificacion_manejo_errores.md` - RFC 7807 (401 líneas)
 - [x] `windsurf-rules.md` - Reglas de desarrollo (1146 líneas)
-- [x] `postman_collection_bian.json` - Tests E2E
+- [x] `payment-orders-api.postman_collection.json` - Tests E2E
 - [x] `PaymentOrderService.wsdl` - WSDL legado
 - [x] Ejemplos XML SOAP (Request/Response)
 
@@ -878,7 +895,7 @@ curl http://localhost:8080/actuator/health
 # Navegador: http://localhost:8080/swagger-ui.html
 
 # 8. Probar con Postman
-# Importar: ai/postman_collection_bian.json
+# Importar: ai/payment-orders-api.postman_collection.json
 ```
 
 ---
@@ -904,11 +921,15 @@ src/
 ```
 ai/
 ├── instrucciones.md
-├── analisis_migracion.md
 ├── verificacion_manejo_errores.md
 ├── windsurf-rules.md
-├── postman_collection_bian.json
+├── payment-orders-api.postman_collection.json
 └── PaymentOrderService.wsdl
+
+doc/
+├── README.md
+├── QUICK_START.md
+└── ANALISIS_MIGRACION.md
 ```
 
 ### Configuración

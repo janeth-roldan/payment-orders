@@ -137,6 +137,105 @@ Antes de confirmar cambios en documentos, verificar:
 - **Docker**: Dockerfile multi-stage
 - **Orquestación**: docker-compose.yml
 
+#### Configuración Docker con Properties Personalizadas
+
+**Objetivo**: Ejecutar el JAR de Spring Boot dentro del contenedor Docker apuntando a un archivo `application-docker.properties` específico.
+
+##### Archivos Requeridos
+
+**1. application-docker.properties**
+- **Ubicación en host**: `/application-docker.properties` (raíz del proyecto)
+- **Ubicación en contenedor**: `/app/config/application-docker.properties`
+- **Permisos**: `644` (lectura para todos, escritura solo para owner)
+- **Contenido**: Configuración específica para Docker
+  - URL de PostgreSQL usando hostname `postgres` (del docker-compose)
+  - Logging en modo DEBUG para troubleshooting
+  - Configuración de Actuator y OpenAPI
+
+**2. entrypoint.sh**
+- **Ubicación en host**: `/entrypoint.sh` (raíz del proyecto)
+- **Ubicación en contenedor**: `/app/entrypoint.sh`
+- **Permisos**: `755` (ejecutable)
+- **Script**:
+```bash
+#!/bin/sh
+# Ejecutar Spring Boot con configuración personalizada
+exec java $JAVA_OPTS -jar /app/app.jar --spring.config.location=file:/app/config/application-docker.properties
+```
+
+##### Estructura del Dockerfile
+
+**Paso 1: Crear directorio de configuración**
+```dockerfile
+RUN mkdir -p /app/config
+```
+
+**Paso 2: Copiar application-docker.properties con permisos**
+```dockerfile
+COPY application-docker.properties /app/config/application-docker.properties
+RUN chmod 644 /app/config/application-docker.properties
+```
+
+**Paso 3: Copiar entrypoint.sh con permisos de ejecución**
+```dockerfile
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+```
+
+**Paso 4: Cambiar ownership al usuario spring**
+```dockerfile
+RUN chown -R spring:spring /app
+USER spring:spring
+```
+
+**Paso 5: Usar entrypoint.sh como punto de entrada**
+```dockerfile
+ENTRYPOINT ["/app/entrypoint.sh"]
+```
+
+##### Comandos de Construcción y Ejecución
+
+**Construir imagen**:
+```bash
+docker build -t payment-orders:latest .
+```
+
+**Ejecutar con docker-compose**:
+```bash
+docker-compose up --build -d
+```
+
+**Verificar configuración**:
+```bash
+# Ver logs para confirmar que usa application-docker.properties
+docker-compose logs -f payment-orders-app
+
+# Verificar que la app está corriendo
+curl http://localhost:8080/actuator/health
+```
+
+##### Ventajas de este Enfoque
+
+1. ✅ **Separación de configuraciones**: Diferentes configs para local vs Docker
+2. ✅ **Seguridad**: Usuario no-root ejecuta la aplicación
+3. ✅ **Flexibilidad**: Fácil cambiar configuración sin reconstruir imagen
+4. ✅ **Permisos correctos**: 644 para configs, 755 para scripts
+5. ✅ **Variables de entorno**: Se pueden sobrescribir desde docker-compose
+
+##### Checklist de Verificación Docker
+
+Antes de hacer commit, verificar:
+- [ ] `application-docker.properties` existe en la raíz del proyecto
+- [ ] `entrypoint.sh` existe en la raíz del proyecto
+- [ ] `entrypoint.sh` tiene permisos de ejecución (755)
+- [ ] Dockerfile copia ambos archivos correctamente
+- [ ] Dockerfile establece permisos correctos
+- [ ] `docker-compose.yml` está configurado correctamente
+- [ ] Build de Docker completa sin errores
+- [ ] Contenedor inicia correctamente
+- [ ] Health check responde OK
+- [ ] Logs muestran conexión exitosa a PostgreSQL
+
 ### Opcional (Nice to Have)
 - Spring WebFlux (reactivo)
 - R2DBC con PostgreSQL
